@@ -33,6 +33,8 @@ export function HomeFeed({ rows }: HomeFeedProps) {
                   title={m.title}
                   year={m.releaseYear}
                   posterUrl={m.posterUrl}
+                  voteAverage={m.vote_average}
+                  voteCount={m.vote_count}
                 />
               ))}
             </MediaRow>
@@ -50,6 +52,8 @@ export function HomeFeed({ rows }: HomeFeedProps) {
                 title={t.name}
                 year={t.firstAirYear}
                 posterUrl={t.posterUrl}
+                voteAverage={t.vote_average}
+                voteCount={t.vote_count}
               />
             ))}
           </MediaRow>

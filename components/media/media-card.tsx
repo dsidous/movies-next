@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
+import { Star } from 'lucide-react';
 
 const HOVER_SCALE_DELAY_MS = 220;
 
@@ -19,10 +20,21 @@ type MediaCardProps = {
   year: string;
   posterUrl: string;
   type: 'movie' | 'tv';
+  voteAverage?: number;
+  voteCount?: number;
   className?: string;
 };
 
-export function MediaCard({ id, title, year, posterUrl, type, className }: MediaCardProps) {
+export function MediaCard({
+  id,
+  title,
+  year,
+  posterUrl,
+  type,
+  voteAverage,
+  voteCount,
+  className,
+}: MediaCardProps) {
   const href = type === 'movie' ? `/movie/${id}` : `/tv/${id}`;
   const [showHoverScale, setShowHoverScale] = useState(false);
   const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,10 +70,14 @@ export function MediaCard({ id, title, year, posterUrl, type, className }: Media
     setShowHoverScale(false);
   };
 
+  const hasRating =
+    typeof voteCount === 'number' && voteCount > 0 && typeof voteAverage === 'number';
+  const ratingLabel = hasRating ? `, rated ${voteAverage.toFixed(1)} out of 10` : '';
+
   return (
     <Link
       href={href}
-      aria-label={year ? `${title} (${year})` : title}
+      aria-label={year ? `${title} (${year})${ratingLabel}` : `${title}${ratingLabel}`}
       className={cn(
         'group relative block shrink-0 cursor-pointer snap-start no-underline select-none',
         'w-[clamp(6rem,min(10.5rem,38vw),10.5rem)]',
@@ -80,7 +96,7 @@ export function MediaCard({ id, title, year, posterUrl, type, className }: Media
     >
       <div
         className={cn(
-          'aspect-2/3 overflow-hidden rounded-md bg-muted shadow transition-transform duration-200',
+          'relative aspect-2/3 overflow-hidden rounded-md bg-muted shadow transition-transform duration-200',
           showHoverScale && 'scale-[1.03]',
           'group-focus-visible:scale-[1.03]',
         )}
@@ -94,6 +110,15 @@ export function MediaCard({ id, title, year, posterUrl, type, className }: Media
           draggable={false}
           className="pointer-events-none h-full w-full object-cover"
         />
+        {hasRating && (
+          <div
+            className="absolute right-1 bottom-1 z-10 flex items-center gap-0.5 rounded-sm bg-zinc-950/85 px-1 py-0.5 text-[10px] font-semibold text-amber-300 tabular-nums ring-1 ring-white/10 sm:right-1.5 sm:bottom-1.5 sm:px-1.5 sm:text-xs"
+            aria-hidden
+          >
+            <Star className="size-2.5 shrink-0 fill-amber-400 text-amber-400 sm:size-3" />
+            {voteAverage.toFixed(1)}
+          </div>
+        )}
       </div>
       <p className="mt-1.5 line-clamp-1 text-xs text-muted-foreground sm:mt-2 sm:text-sm">
         {year ? `${title} · ${year}` : title}
