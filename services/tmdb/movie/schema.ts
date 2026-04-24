@@ -12,7 +12,7 @@ export const MovieListItemRowSchema = z.looseObject({
   overview: z.string(),
   popularity: z.number(),
   poster_path: z.string().nullable(),
-  release_date: z.string(),
+  release_date: z.string().nullable(),
   title: z.string(),
   video: z.boolean(),
   vote_average: z.number(),
@@ -115,23 +115,23 @@ export const MovieDetailsRowSchema = z.looseObject({
   belongs_to_collection: BelongsToCollectionSchema.optional().nullable(),
   budget: z.number(),
   genres: z.array(GenreSchema),
-  homepage: z.string(),
+  homepage: z.string().nullable(),
   id: z.number(),
   imdb_id: z.string().nullable().optional(),
   origin_country: z.array(z.string()).optional(),
   original_language: z.string(),
   original_title: z.string(),
-  overview: z.string(),
+  overview: z.string().nullable(),
   popularity: z.number(),
   poster_path: z.string().nullable(),
   production_companies: z.array(ProductionCompanySchema),
   production_countries: z.array(ProductionCountrySchema),
-  release_date: z.string(),
+  release_date: z.string().nullable(),
   revenue: z.number(),
   runtime: z.number().nullable().optional(),
   spoken_languages: z.array(SpokenLanguageSchema),
   status: z.string(),
-  tagline: z.string(),
+  tagline: z.string().nullable(),
   title: z.string(),
   video: z.boolean(),
   vote_average: z.number(),
@@ -215,6 +215,14 @@ export const MovieCreditsSchema = z.object({
   crew: z.array(CrewMemberSchema),
 });
 export type MovieCredits = z.infer<typeof MovieCreditsSchema>;
+
+export type CastDisplayItem = {
+  id: number;
+  creditId: string;
+  name: string;
+  character: string;
+  profileUrl: string | null;
+};
 
 export const MovieExternalIdsSchema = z.looseObject({
   id: z.number(),
@@ -337,6 +345,19 @@ export const MovieVideosResponseSchema = z.object({
   results: z.array(VideoItemSchema),
 });
 export type MovieVideosResponse = z.infer<typeof MovieVideosResponseSchema>;
+
+export type SimilarMoviesEnriched = {
+  page: number;
+  results: MovieListItem[];
+  total_pages: number;
+  total_results: number;
+};
+
+export type MovieDetailsWithAppends = MovieDetails & {
+  videos?: MovieVideosResponse;
+  credits?: MovieCredits;
+  similar?: SimilarMoviesEnriched;
+};
 
 const WatchProviderOptionSchema = z.looseObject({
   display_priority: z.number().optional().nullable(),

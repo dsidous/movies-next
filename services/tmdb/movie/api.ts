@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { getConfiguration } from '../configuration/api';
 import { tmdbFetch } from '../client';
+import { getConfiguration } from '../configuration/api';
 import {
   type DetailIncludeQuery,
   formatImageUrlWithBase,
@@ -9,7 +9,15 @@ import {
   tmdbPathWithInclude,
 } from '../utils';
 import { movieEndpoints } from './endpoints';
-import type { MovieDetails, MovieDetailsRow, MovieListItem, MovieListItemRow } from './schema';
+import type {
+  CastDisplayItem,
+  MovieCredits,
+  MovieDetails,
+  MovieDetailsRow,
+  MovieDetailsWithAppends,
+  MovieListItem,
+  MovieListItemRow,
+} from './schema';
 import {
   MovieAccountStatesSchema,
   MovieAlternativeTitlesResponseSchema,
@@ -42,10 +50,7 @@ type ListMovieIdQuery = Paged;
 type MovieIdChangesPathQuery = { end_date?: string; start_date?: string } & Paged;
 type PagedListQuery = { page?: number };
 
-function enrichMovieListItem(
-  item: MovieListItemRow,
-  imageBaseUrl: string,
-): MovieListItem {
+function enrichMovieListItem(item: MovieListItemRow, imageBaseUrl: string): MovieListItem {
   return {
     ...item,
     posterUrl: formatImageUrlWithBase(item.poster_path, imageBaseUrl, 'w500'),
@@ -56,10 +61,7 @@ function enrichMovieListItem(
   };
 }
 
-function enrichMovieDetails(
-  row: MovieDetailsRow,
-  imageBaseUrl: string,
-): MovieDetails {
+function enrichMovieDetails(row: MovieDetailsRow, imageBaseUrl: string): MovieDetails {
   return {
     ...row,
     posterUrl: formatImageUrlWithBase(row.poster_path, imageBaseUrl, 'w500'),
@@ -68,6 +70,26 @@ function enrichMovieDetails(
       : null,
     releaseYear: row.release_date ? row.release_date.split('-')[0]! : '',
   };
+}
+
+const DEFAULT_CAST_DISPLAY_LIMIT = 18;
+
+export function enrichCastForDisplay(
+  cast: MovieCredits['cast'] | undefined,
+  imageBaseUrl: string,
+  options?: { limit?: number },
+): CastDisplayItem[] {
+  if (!cast?.length) return [];
+  const limit = options?.limit ?? DEFAULT_CAST_DISPLAY_LIMIT;
+  return cast.slice(0, limit).map((c) => ({
+    id: c.id,
+    creditId: c.credit_id ?? `${c.id}-${c.name ?? ''}`,
+    name: c.name ?? 'Unknown',
+    character: c.character ?? '',
+    profileUrl: c.profile_path
+      ? formatImageUrlWithBase(c.profile_path, imageBaseUrl, 'w500')
+      : null,
+  }));
 }
 
 // --- /movie (global) — GET
@@ -99,7 +121,10 @@ export async function getNowPlayingMovies(
 ) {
   const [data, { images }] = await Promise.all([
     tmdbFetch<z.input<typeof NowPlayingResponseSchema>>(
-      tmdbPath(movieEndpoints.nowPlaying, params as Record<string, string | number | boolean | null | undefined>),
+      tmdbPath(
+        movieEndpoints.nowPlaying,
+        params as Record<string, string | number | boolean | null | undefined>,
+      ),
     ),
     getConfiguration(),
   ]);
@@ -110,12 +135,13 @@ export async function getNowPlayingMovies(
   };
 }
 
-export async function getPopularMovies(
-  params?: PagedWithRegion,
-) {
+export async function getPopularMovies(params?: PagedWithRegion) {
   const [data, { images }] = await Promise.all([
     tmdbFetch<z.input<typeof PopularResponseSchema>>(
-      tmdbPath(movieEndpoints.popular, params as Record<string, string | number | boolean | null | undefined>),
+      tmdbPath(
+        movieEndpoints.popular,
+        params as Record<string, string | number | boolean | null | undefined>,
+      ),
     ),
     getConfiguration(),
   ]);
@@ -126,12 +152,13 @@ export async function getPopularMovies(
   };
 }
 
-export async function getTopRatedMovies(
-  params?: PagedWithRegion,
-) {
+export async function getTopRatedMovies(params?: PagedWithRegion) {
   const [data, { images }] = await Promise.all([
     tmdbFetch<z.input<typeof TopRatedResponseSchema>>(
-      tmdbPath(movieEndpoints.topRated, params as Record<string, string | number | boolean | null | undefined>),
+      tmdbPath(
+        movieEndpoints.topRated,
+        params as Record<string, string | number | boolean | null | undefined>,
+      ),
     ),
     getConfiguration(),
   ]);
@@ -152,7 +179,10 @@ export async function getUpcomingMovies(
 ) {
   const [data, { images }] = await Promise.all([
     tmdbFetch<z.input<typeof UpcomingResponseSchema>>(
-      tmdbPath(movieEndpoints.upcoming, params as Record<string, string | number | boolean | null | undefined>),
+      tmdbPath(
+        movieEndpoints.upcoming,
+        params as Record<string, string | number | boolean | null | undefined>,
+      ),
     ),
     getConfiguration(),
   ]);
@@ -163,13 +193,13 @@ export async function getUpcomingMovies(
   };
 }
 
-export async function getTrendingMovies(
-  time: 'day' | 'week',
-  params?: PagedListQuery,
-) {
+export async function getTrendingMovies(time: 'day' | 'week', params?: PagedListQuery) {
   const [data, { images }] = await Promise.all([
     tmdbFetch<z.input<typeof TrendingMoviesResponseSchema>>(
-      tmdbPath(movieEndpoints.trending(time), params as Record<string, string | number | boolean | null | undefined>),
+      tmdbPath(
+        movieEndpoints.trending(time),
+        params as Record<string, string | number | boolean | null | undefined>,
+      ),
     ),
     getConfiguration(),
   ]);
@@ -180,25 +210,39 @@ export async function getTrendingMovies(
   };
 }
 
-// --- /movie/{id} — GET
-/**
- * Movie details. `include` maps to TMDB `append_to_response` (e.g. `videos`, `images`, `credits`, `recommendations`).
- * @see https://developer.themoviedb.org/docs/append-to-response
- */
 export async function getMovie(
   id: number,
   params?: DetailIncludeQuery & {
     include_image_language?: string;
     language?: string;
   },
-) {
-  const [data, { images }] = await Promise.all([
-    tmdbFetch<z.input<typeof MovieDetailsRowSchema>>(
-      tmdbPathWithInclude(movieEndpoints.details(id), params),
-    ),
+): Promise<MovieDetailsWithAppends> {
+  const [raw, { images }] = await Promise.all([
+    tmdbFetch<Record<string, unknown>>(tmdbPathWithInclude(movieEndpoints.details(id), params)),
     getConfiguration(),
   ]);
-  return enrichMovieDetails(MovieDetailsRowSchema.parse(data), images.imageBaseUrl);
+  const row = MovieDetailsRowSchema.parse(raw);
+  const movie: MovieDetailsWithAppends = {
+    ...enrichMovieDetails(row, images.imageBaseUrl),
+  };
+  if (raw.videos != null && typeof raw.videos === 'object') {
+    const p = MovieVideosResponseSchema.safeParse(raw.videos);
+    if (p.success) movie.videos = p.data;
+  }
+  if (raw.credits != null && typeof raw.credits === 'object') {
+    const p = MovieCreditsSchema.safeParse(raw.credits);
+    if (p.success) movie.credits = p.data;
+  }
+  if (raw.similar != null && typeof raw.similar === 'object') {
+    const p = SimilarMoviesResponseSchema.safeParse(raw.similar);
+    if (p.success) {
+      movie.similar = {
+        ...p.data,
+        results: p.data.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+      };
+    }
+  }
+  return movie;
 }
 
 export async function getMovieAccountStates(
@@ -206,7 +250,10 @@ export async function getMovieAccountStates(
   params?: { session_id?: string; guest_session_id?: string },
 ) {
   const data = await tmdbFetch<z.input<typeof MovieAccountStatesSchema>>(
-    tmdbPath(movieEndpoints.accountStates(id), params as Record<string, string | number | boolean | null | undefined>),
+    tmdbPath(
+      movieEndpoints.accountStates(id),
+      params as Record<string, string | number | boolean | null | undefined>,
+    ),
   );
   return MovieAccountStatesSchema.parse(data);
 }
@@ -218,12 +265,12 @@ export async function getMovieAlternativeTitles(id: number) {
   return MovieAlternativeTitlesResponseSchema.parse(data);
 }
 
-export async function getMovieIdChanges(
-  id: number,
-  params?: MovieIdChangesPathQuery,
-) {
+export async function getMovieIdChanges(id: number, params?: MovieIdChangesPathQuery) {
   const data = await tmdbFetch<z.input<typeof MovieIdChangesResponseSchema>>(
-    tmdbPath(movieEndpoints.itemChanges(id), params as Record<string, string | number | boolean | null | undefined>),
+    tmdbPath(
+      movieEndpoints.itemChanges(id),
+      params as Record<string, string | number | boolean | null | undefined>,
+    ),
   );
   return MovieIdChangesResponseSchema.parse(data);
 }
@@ -242,7 +289,10 @@ export async function getMovieExternalIds(id: number) {
 
 export async function getMovieImages(id: number, params?: { include_image_language?: string }) {
   const data = await tmdbFetch<z.input<typeof MovieImagesResponseSchema>>(
-    tmdbPath(movieEndpoints.images(id), params as Record<string, string | number | boolean | null | undefined>),
+    tmdbPath(
+      movieEndpoints.images(id),
+      params as Record<string, string | number | boolean | null | undefined>,
+    ),
   );
   return MovieImagesResponseSchema.parse(data);
 }
@@ -259,18 +309,21 @@ export async function getMoviePublicLists(
   params?: ListMovieIdQuery & { language?: string },
 ) {
   const data = await tmdbFetch<z.input<typeof MoviePublicListsResponseSchema>>(
-    tmdbPath(movieEndpoints.lists(id), params as Record<string, string | number | boolean | null | undefined>),
+    tmdbPath(
+      movieEndpoints.lists(id),
+      params as Record<string, string | number | boolean | null | undefined>,
+    ),
   );
   return MoviePublicListsResponseSchema.parse(data);
 }
 
-export async function getMovieRecommendations(
-  id: number,
-  params?: ListMovieIdQuery,
-) {
+export async function getMovieRecommendations(id: number, params?: ListMovieIdQuery) {
   const [data, { images }] = await Promise.all([
     tmdbFetch<z.input<typeof MovieRecommendationsResponseSchema>>(
-      tmdbPath(movieEndpoints.recommendations(id), params as Record<string, string | number | boolean | null | undefined>),
+      tmdbPath(
+        movieEndpoints.recommendations(id),
+        params as Record<string, string | number | boolean | null | undefined>,
+      ),
     ),
     getConfiguration(),
   ]);
@@ -288,23 +341,23 @@ export async function getMovieReleaseDates(id: number) {
   return MovieReleaseDatesResponseSchema.parse(data);
 }
 
-export async function getMovieReviews(
-  id: number,
-  params?: { page?: number; language?: string },
-) {
+export async function getMovieReviews(id: number, params?: { page?: number; language?: string }) {
   const data = await tmdbFetch<z.input<typeof MovieReviewsResponseSchema>>(
-    tmdbPath(movieEndpoints.reviews(id), params as Record<string, string | number | boolean | null | undefined>),
+    tmdbPath(
+      movieEndpoints.reviews(id),
+      params as Record<string, string | number | boolean | null | undefined>,
+    ),
   );
   return MovieReviewsResponseSchema.parse(data);
 }
 
-export async function getMovieSimilar(
-  id: number,
-  params?: ListMovieIdQuery,
-) {
+export async function getMovieSimilar(id: number, params?: ListMovieIdQuery) {
   const [data, { images }] = await Promise.all([
     tmdbFetch<z.input<typeof SimilarMoviesResponseSchema>>(
-      tmdbPath(movieEndpoints.similar(id), params as Record<string, string | number | boolean | null | undefined>),
+      tmdbPath(
+        movieEndpoints.similar(id),
+        params as Record<string, string | number | boolean | null | undefined>,
+      ),
     ),
     getConfiguration(),
   ]);
@@ -324,7 +377,10 @@ export async function getMovieTranslations(id: number) {
 
 export async function getMovieVideos(id: number, params?: { language?: string }) {
   const data = await tmdbFetch<z.input<typeof MovieVideosResponseSchema>>(
-    tmdbPath(movieEndpoints.videos(id), params as Record<string, string | number | boolean | null | undefined>),
+    tmdbPath(
+      movieEndpoints.videos(id),
+      params as Record<string, string | number | boolean | null | undefined>,
+    ),
   );
   return MovieVideosResponseSchema.parse(data);
 }
