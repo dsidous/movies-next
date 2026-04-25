@@ -1,13 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import Image from 'next/image';
 import Link from 'next/link';
 
-import type { SearchMultiResult } from '@services/tmdb';
 import { searchMultiAction } from '@/lib/actions/search';
 import { cn } from '@/lib/utils';
+import type { SearchMultiResult } from '@services/tmdb';
 import { Search } from 'lucide-react';
 
 import { Command, CommandEmpty, CommandItem, CommandList } from '@/components/ui/command';
@@ -67,6 +67,18 @@ export function MultiSearch() {
   const [error, setError] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const [fetched, setFetched] = useState(false);
+  const anchorRef = useRef<HTMLDivElement | null>(null);
+  const [anchorWidth, setAnchorWidth] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = anchorRef.current;
+    if (!el) return;
+    const read = () => setAnchorWidth(el.getBoundingClientRect().width);
+    read();
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const runSearch = useCallback(async (q: string) => {
     const t = q.trim();
@@ -120,8 +132,9 @@ export function MultiSearch() {
     >
       <PopoverAnchor asChild>
         <div
+          ref={anchorRef}
           className={cn(
-            'flex max-w-md min-w-0 items-center gap-2 rounded-md border bg-background px-3 shadow-xs',
+            'flex w-full max-w-md min-w-0 items-center gap-2 rounded-md border bg-background px-3 shadow-xs',
             'has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50',
           )}
         >
@@ -142,9 +155,13 @@ export function MultiSearch() {
       </PopoverAnchor>
       <PopoverContent
         className="p-0"
-        align="end"
+        align="start"
         sideOffset={6}
-        style={{ width: 'var(--radix-popover-anchor-width)' }}
+        style={
+          anchorWidth > 0
+            ? { width: anchorWidth, minWidth: anchorWidth, maxWidth: anchorWidth }
+            : undefined
+        }
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <Command className="max-h-80" shouldFilter={false}>
