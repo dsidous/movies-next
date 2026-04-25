@@ -28,7 +28,6 @@ export function MovieHero({ movie, className }: MovieHeroProps) {
     <section
       className={cn(
         'relative isolate flex w-full flex-col overflow-hidden',
-        // Match `TrendingHero` on the home page
         'min-h-[min(32rem,75vh)] sm:min-h-[min(36rem,78vh)] lg:min-h-[min(40rem,80vh)]',
         className,
       )}
@@ -53,7 +52,7 @@ export function MovieHero({ movie, className }: MovieHeroProps) {
         aria-hidden
       />
 
-      <div className="relative z-10 flex min-h-0 w-full min-w-0 flex-1 flex-col justify-end px-4 pb-15 pt-8 sm:px-5 sm:pb-21 sm:pt-10 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
+      <div className="relative z-10 flex min-h-0 w-full min-w-0 flex-1 flex-col justify-end px-4 pt-8 pb-15 sm:px-5 sm:pt-10 sm:pb-21 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
         <h1 className="max-w-4xl text-3xl font-bold tracking-tight text-white [text-shadow:0_2px_24px_rgb(0_0_0/0.9)] sm:text-4xl md:text-5xl lg:text-6xl">
           {movie.title}
         </h1>
@@ -75,10 +74,7 @@ export function MovieHero({ movie, className }: MovieHeroProps) {
                 className="inline-flex items-center gap-1 text-amber-300 [text-shadow:0_0_1px_rgba(0,0,0,0.88),0_0_8px_rgba(0,0,0,0.65)]"
                 title="Average user score on TMDb"
               >
-                <Star
-                  className="size-4 shrink-0 fill-amber-400 text-amber-400"
-                  aria-hidden
-                />
+                <Star className="size-4 shrink-0 fill-amber-400 text-amber-400" aria-hidden />
                 <span className="tabular-nums">{score}</span>
                 <span className="text-xs font-normal text-zinc-300/90">/10</span>
               </span>

@@ -22,6 +22,7 @@ type MediaCardProps = {
   type: 'movie' | 'tv';
   voteAverage?: number;
   voteCount?: number;
+  subtitle?: string;
   className?: string;
 };
 
@@ -33,6 +34,7 @@ export function MediaCard({
   type,
   voteAverage,
   voteCount,
+  subtitle,
   className,
 }: MediaCardProps) {
   const href = type === 'movie' ? `/movie/${id}` : `/tv/${id}`;
@@ -123,6 +125,11 @@ export function MediaCard({
       <p className="mt-1.5 line-clamp-1 text-xs text-muted-foreground sm:mt-2 sm:text-sm">
         {year ? `${title} · ${year}` : title}
       </p>
+      {subtitle ? (
+        <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground/90 sm:text-xs">
+          {subtitle}
+        </p>
+      ) : null}
     </Link>
   );
 }

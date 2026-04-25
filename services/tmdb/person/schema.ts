@@ -68,6 +68,17 @@ export type PersonDetailsRow = z.infer<typeof PersonDetailsRowSchema>;
 export type PersonDetails = PersonDetailsRow & { profileUrl: string };
 export const PersonDetailsSchema = PersonDetailsRowSchema;
 
+export type PersonCreditCardItem = {
+  id: number;
+  type: 'movie' | 'tv';
+  title: string;
+  year: string;
+  posterUrl: string;
+  character: string;
+  vote_average: number;
+  vote_count: number;
+};
+
 export const PersonIdChangesResponseSchema = MovieIdChangesResponseSchema;
 export type PersonIdChangesResponse = z.infer<typeof PersonIdChangesResponseSchema>;
 

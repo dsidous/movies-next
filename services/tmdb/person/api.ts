@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { getConfiguration } from '../configuration/api';
 import { tmdbFetch } from '../client';
+import { getConfiguration } from '../configuration/api';
 import {
   type DetailIncludeQuery,
   formatImageUrlWithBase,
@@ -10,6 +10,7 @@ import {
 } from '../utils';
 import { personEndpoints } from './endpoints';
 import type {
+  PersonCreditCardItem,
   PersonDetails,
   PersonDetailsRow,
   PersonPopularListItem,
@@ -90,10 +91,7 @@ export async function getPopularPeople(params?: Paged) {
  * Person details. `include` maps to TMDB `append_to_response` (e.g. `images`, `movie_credits`, `tv_credits`, `combined_credits`, `tagged_images`).
  * @see https://developer.themoviedb.org/docs/append-to-response
  */
-export async function getPerson(
-  personId: number,
-  params?: DetailIncludeQuery,
-) {
+export async function getPerson(personId: number, params?: DetailIncludeQuery) {
   const [data, { images }] = await Promise.all([
     tmdbFetch<z.input<typeof PersonDetailsRowSchema>>(
       tmdbPathWithInclude(personEndpoints.details(personId), params),
@@ -141,10 +139,7 @@ export async function getPersonMovieCredits(personId: number) {
   return PersonCreditsResponseSchema.parse(data);
 }
 
-export async function getPersonTaggedImages(
-  personId: number,
-  params?: Paged,
-) {
+export async function getPersonTaggedImages(personId: number, params?: Paged) {
   const data = await tmdbFetch<z.input<typeof PersonTaggedImagesResponseSchema>>(
     tmdbPath(personEndpoints.taggedImages(personId), params as QueryRecord),
   );
@@ -163,4 +158,77 @@ export async function getPersonTvCredits(personId: number) {
     personEndpoints.tvCredits(personId),
   );
   return PersonCreditsResponseSchema.parse(data);
+}
+
+const CREDIT_DISPLAY_LIMIT = 60;
+
+type RawCombinedCast = Record<string, unknown>;
+
+function creditTitle(c: RawCombinedCast) {
+  const t = c.title;
+  const n = c.name;
+  if (typeof t === 'string' && t.length) return t;
+  if (typeof n === 'string' && n.length) return n;
+  return 'Untitled';
+}
+
+function creditYear(c: RawCombinedCast) {
+  const rel = c.release_date;
+  const first = c.first_air_date;
+  const raw =
+    typeof rel === 'string' && rel ? rel : typeof first === 'string' && first ? first : '';
+  if (!raw) return '';
+  return raw.split('-')[0] ?? '';
+}
+
+export function enrichPersonCombinedCastForDisplay(
+  cast: unknown[] | undefined,
+  imageBaseUrl: string,
+  options?: { limit?: number },
+): PersonCreditCardItem[] {
+  if (!cast?.length) return [];
+  const limit = options?.limit ?? CREDIT_DISPLAY_LIMIT;
+  const seen = new Set<string>();
+  const rows: PersonCreditCardItem[] = [];
+
+  for (const raw of cast) {
+    if (rows.length >= limit) break;
+    if (!raw || typeof raw !== 'object') continue;
+    const c = raw as RawCombinedCast;
+    const id = c.id;
+    const media = c.media_type;
+    if (typeof id !== 'number' || (media !== 'movie' && media !== 'tv')) continue;
+    const key = `${String(media)}-${id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const va = c.vote_average;
+    const vc = c.vote_count;
+    const ch = c.character;
+    const poster = c.poster_path;
+
+    rows.push({
+      id,
+      type: media,
+      title: creditTitle(c),
+      year: creditYear(c),
+      posterUrl: formatImageUrlWithBase(
+        typeof poster === 'string' ? poster : null,
+        imageBaseUrl,
+        'w500',
+      ),
+      character: typeof ch === 'string' ? ch : '',
+      vote_average: typeof va === 'number' ? va : 0,
+      vote_count: typeof vc === 'number' ? vc : 0,
+    });
+  }
+
+  rows.sort((a, b) => {
+    const yb = b.year ? parseInt(b.year, 10) : 0;
+    const ya = a.year ? parseInt(a.year, 10) : 0;
+    if (yb !== ya) return yb - ya;
+    return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+  });
+
+  return rows;
 }
