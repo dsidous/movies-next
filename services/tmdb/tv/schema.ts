@@ -124,11 +124,33 @@ export const TvDetailsRowSchema = z.looseObject({
 });
 
 export type TvDetailsRow = z.infer<typeof TvDetailsRowSchema>;
+export type TvNetworkDisplay = {
+  id: number;
+  name: string;
+  /** From `logo_path` (null if missing). */
+  logoUrl: string | null;
+};
+
 export type TvDetails = TvDetailsRow & {
   posterUrl: string;
   backdropUrl: string | null;
   firstAirYear: string;
+  /** TMDB `networks` with resolved logo URLs. */
+  displayNetworks: TvNetworkDisplay[];
 };
+
+/** TV detail with `append_to_response` (see {@link getTv} merge). */
+export type TvDetailsWithAppends = TvDetails & {
+  videos?: z.infer<typeof MovieVideosResponseSchema>;
+  credits?: z.infer<typeof TvCreditsSchema>;
+  similar?: {
+    page: number;
+    results: TvListItem[];
+    total_pages: number;
+    total_results: number;
+  };
+};
+
 export const TvDetailsSchema = TvDetailsRowSchema;
 
 export const TvCreditsSchema = z.object({

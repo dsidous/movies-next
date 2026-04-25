@@ -12,6 +12,8 @@ import { tvEndpoints } from './endpoints';
 import type {
   TvDetails,
   TvDetailsRow,
+  TvDetailsWithAppends,
+  TvNetworkDisplay,
   TvEpisode,
   TvEpisodeRow,
   TvListItem,
@@ -70,6 +72,28 @@ function enrichTvListItem(item: TvListItemRow, imageBaseUrl: string): TvListItem
   };
 }
 
+function mapDisplayNetworks(
+  networks: TvDetailsRow['networks'],
+  imageBaseUrl: string,
+): TvNetworkDisplay[] {
+  if (!networks?.length) return [];
+  const out: TvNetworkDisplay[] = [];
+  for (const n of networks) {
+    if (n == null || typeof n !== 'object') continue;
+    const o = n as Record<string, unknown>;
+    const id = typeof o.id === 'number' ? o.id : 0;
+    const name = typeof o.name === 'string' && o.name.trim() ? o.name.trim() : 'Network';
+    const path = o.logo_path;
+    const logoPath = typeof path === 'string' && path.length > 0 ? path : null;
+    out.push({
+      id,
+      name,
+      logoUrl: logoPath ? formatImageUrlWithBase(logoPath, imageBaseUrl, 'w185') : null,
+    });
+  }
+  return out;
+}
+
 function enrichTvDetails(row: TvDetailsRow, imageBaseUrl: string): TvDetails {
   return {
     ...row,
@@ -78,6 +102,7 @@ function enrichTvDetails(row: TvDetailsRow, imageBaseUrl: string): TvDetails {
       ? formatImageUrlWithBase(row.backdrop_path, imageBaseUrl, 'original')
       : null,
     firstAirYear: row.first_air_date ? row.first_air_date.split('-')[0]! : '',
+    displayNetworks: mapDisplayNetworks(row.networks, imageBaseUrl),
   };
 }
 
@@ -183,14 +208,36 @@ export async function getTv(
     include_image_language?: string;
     language?: string;
   },
-) {
-  const [data, { images }] = await Promise.all([
-    tmdbFetch<z.input<typeof TvDetailsRowSchema>>(
+): Promise<TvDetailsWithAppends> {
+  const [raw, { images }] = await Promise.all([
+    tmdbFetch<Record<string, unknown>>(
       tmdbPathWithInclude(tvEndpoints.details(seriesId), params),
     ),
     getConfiguration(),
   ]);
-  return enrichTvDetails(TvDetailsRowSchema.parse(data), images.imageBaseUrl);
+  const row = TvDetailsRowSchema.parse(raw);
+  const base = images.imageBaseUrl;
+  const show: TvDetailsWithAppends = {
+    ...enrichTvDetails(row, base),
+  };
+  if (raw.videos != null && typeof raw.videos === 'object') {
+    const p = TvVideosResponseSchema.safeParse(raw.videos);
+    if (p.success) show.videos = p.data;
+  }
+  if (raw.credits != null && typeof raw.credits === 'object') {
+    const p = TvCreditsSchema.safeParse(raw.credits);
+    if (p.success) show.credits = p.data;
+  }
+  if (raw.similar != null && typeof raw.similar === 'object') {
+    const p = TvSimilarResponseSchema.safeParse(raw.similar);
+    if (p.success) {
+      show.similar = {
+        ...p.data,
+        results: p.data.results.map((r) => enrichTvListItem(r, base)),
+      };
+    }
+  }
+  return show;
 }
 
 export async function getTvAccountStates(

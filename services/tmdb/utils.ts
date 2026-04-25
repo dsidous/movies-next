@@ -77,13 +77,16 @@ export function tmdbPathWithInclude(
 export function formatImageUrlWithBase(
   path: string | null,
   imageBaseUrl: string,
-  size: 'w500' | 'original' = 'w500',
+  size: 'w500' | 'original' | 'w185' | 'w92' = 'w500',
 ) {
   if (!path) return '/placeholder-poster.png'; // TODO: Add a placeholder image
   return `${imageBaseUrl}${size}${path}`;
 }
 
-export const formatImageUrl = async (path: string | null, size: 'w500' | 'original' = 'w500') => {
+export const formatImageUrl = async (
+  path: string | null,
+  size: 'w500' | 'original' | 'w185' | 'w92' = 'w500',
+) => {
   const configuration = await getConfiguration();
   return formatImageUrlWithBase(path, configuration.images.imageBaseUrl, size);
 };
