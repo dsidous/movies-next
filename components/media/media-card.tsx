@@ -10,7 +10,6 @@ import { Star } from 'lucide-react';
 
 const HOVER_SCALE_DELAY_MS = 220;
 
-// Match `sizes` to card width (viewport-relative rails, full-width layout)
 const posterSizes =
   '(max-width: 480px) 44vw, (max-width: 640px) 36vw, (max-width: 1024px) 24vw, (max-width: 1536px) 18vw, 15vw';
 
@@ -122,8 +121,9 @@ export function MediaCard({
           </div>
         )}
       </div>
-      <p className="mt-1.5 line-clamp-1 text-xs text-muted-foreground sm:mt-2 sm:text-sm">
-        {year ? `${title} · ${year}` : title}
+      <p className="mt-1.5 flex min-w-0 items-baseline gap-1.5 text-xs text-muted-foreground sm:mt-2 sm:text-sm">
+        <span className="min-w-0 shrink truncate">{title}</span>
+        {year ? <span className="shrink-0 tabular-nums">· {year}</span> : null}
       </p>
       {subtitle ? (
         <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground/90 sm:text-xs">
