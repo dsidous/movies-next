@@ -1,15 +1,16 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { parseMovieIdParam } from '@/components/movie/movie-helpers';
-import { PersonCreditsSection } from '@/components/person/person-credits-section';
-import { PersonHero } from '@/components/person/person-hero';
 import {
   enrichPersonCombinedCastForDisplay,
   getConfiguration,
   getPerson,
   getPersonCombinedCredits,
 } from '@services/tmdb';
+
+import { parseMovieIdParam } from '@/components/movie/movie-helpers';
+import { PersonCreditsSection } from '@/components/person/person-credits-section';
+import { PersonHero } from '@/components/person/person-hero';
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -47,10 +48,7 @@ export default async function PersonDetailPage({ params }: PageProps) {
   const [person, combined, { images }] = data;
   const { imageBaseUrl } = images;
 
-  const creditItems = enrichPersonCombinedCastForDisplay(
-    combined.cast,
-    imageBaseUrl,
-  );
+  const creditItems = enrichPersonCombinedCastForDisplay(combined.cast, imageBaseUrl);
 
   return (
     <div className="min-h-screen bg-zinc-950 pb-10 text-zinc-100">
