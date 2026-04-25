@@ -27,7 +27,9 @@ export function MovieHero({ movie, className }: MovieHeroProps) {
   return (
     <section
       className={cn(
-        'relative isolate flex w-full min-h-[60svh] flex-col overflow-hidden sm:min-h-[65svh]',
+        'relative isolate flex w-full flex-col overflow-hidden',
+        // Match `TrendingHero` on the home page
+        'min-h-[min(32rem,75vh)] sm:min-h-[min(36rem,78vh)] lg:min-h-[min(40rem,80vh)]',
         className,
       )}
       aria-label={movie.title}
