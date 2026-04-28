@@ -11,6 +11,7 @@
 [![cmdk](https://img.shields.io/badge/cmdk-1.1-1E1E1E?style=flat-square)](https://cmdk.paco.me/)
 [![Lucide](https://img.shields.io/badge/Lucide-1-000000?style=flat-square&logo=lucide&logoColor=white)](https://lucide.dev/)
 [![Zod](https://img.shields.io/badge/Zod-4-3B82F6?style=flat-square&logo=zod&logoColor=white)](https://zod.dev/)
+[![TanStack Query](https://img.shields.io/badge/TanStack_Query-5-FF4154?style=flat-square)](https://tanstack.com/query/latest)
 [![ESLint](https://img.shields.io/badge/ESLint-9-4B32C3?style=flat-square&logo=eslint&logoColor=white)](https://eslint.org/)
 [![Prettier](https://img.shields.io/badge/Prettier-3-1A2C34?style=flat-square&logo=prettier&logoColor=F7B93E)](https://prettier.io/)
 [![TMDB](https://img.shields.io/badge/TMDB-API-01D277?style=flat-square&logo=themoviedatabase&logoColor=white)](https://www.themoviedb.org/)
@@ -24,7 +25,7 @@ A Next.js app for browsing movies, TV series, and people using [The Movie Databa
 | Area | Technologies |
 |------|----------------|
 | **Runtime & package manager** | [Bun](https://bun.sh/) |
-| **Framework** | [Next.js](https://nextjs.org/) 16 (App Router, React Server Components, Server Actions) |
+| **Framework** | [Next.js](https://nextjs.org/) 16 (App Router, React Server Components) |
 | **UI library** | [React](https://react.dev/) 19 |
 | **Language** | [TypeScript](https://www.typescriptlang.org/) 5 |
 | **Styling** | [Tailwind CSS](https://tailwindcss.com/) 4, [PostCSS](https://postcss.org/), [tw-animate-css](https://github.com/Wombosvideo/tw-animate-css) |
@@ -32,7 +33,9 @@ A Next.js app for browsing movies, TV series, and people using [The Movie Databa
 | **Icons** | [Lucide React](https://lucide.dev/) |
 | **Class names** | [clsx](https://github.com/lukeed/clsx), [tailwind-merge](https://github.com/dcastil/tailwind-merge), [class-variance-authority](https://cva.style/) |
 | **Validation & API types** | [Zod](https://zod.dev/) 4 |
-| **API integration** | TMDB REST API (fetch), optional [openapi-typescript](https://github.com/openapi-ts/openapi-typescript) in dev |
+| **Server data & mutations** | [Next.js Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations) (`'use server'` modules under `lib/actions/`) — TMDB calls stay on the server |
+| **Client-side fetching & caching** | [TanStack Query](https://tanstack.com/query/latest) v5 (`@tanstack/react-query`) — [`QueryClientProvider`](components/providers/query-provider.tsx) in the root layout; [`useInfiniteQuery`](https://tanstack.com/query/latest/docs/framework/react/guides/infinite-queries) for paginated lists (popular people, movie/TV discover) |
+| **API integration** | TMDB REST API (fetch via `services/tmdb/`), optional [openapi-typescript](https://github.com/openapi-ts/openapi-typescript) in dev |
 | **Linting & formatting** | [ESLint](https://eslint.org/) 9 (with `eslint-config-next`, `eslint-config-prettier`), [Prettier](https://prettier.io/) 3 (with [prettier-plugin-tailwindcss](https://github.com/tailwindlabs/prettier-plugin-tailwindcss), [@trivago/prettier-plugin-sort-imports](https://github.com/trivago/prettier-plugin-sort-imports)) |
 | **Images** | [Next.js Image](https://nextjs.org/docs/app/api-reference/components/image) (`sharp` via Next) |
 
@@ -51,6 +54,6 @@ Configure TMDB (and any other) secrets in a local `.env` file; Next.js loads it 
 ## Project layout (high level)
 
 - `app/` — App Router pages and layouts
-- `components/` — React components (UI primitives under `components/ui/`)
-- `lib/` — Shared utilities and server actions
+- `components/` — React components (UI primitives under `components/ui/`, providers under `components/providers/`)
+- `lib/` — Shared utilities; **`lib/actions/`** — Server Actions (e.g. paginated TMDB reads for infinite-scroll screens)
 - `services/tmdb/` — TMDB client, schemas, and feature modules
