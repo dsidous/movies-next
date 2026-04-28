@@ -31,20 +31,20 @@ export default async function MoviesPage({ searchParams }: PageProps) {
 
   return (
     <div className="w-full min-w-0 px-4 py-8 md:px-6 lg:px-10">
-      <header className="mx-auto mb-8 max-w-6xl space-y-2">
+      <header className="mb-8 w-full space-y-2">
         <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">Movies</h1>
-        <p className="max-w-2xl text-muted-foreground">
+        <p className="text-muted-foreground">
           Explore releases with filters for sort order, genres, release year, and rating. Results
           come from TMDB&apos;s discover API and update when you change settings.
         </p>
       </header>
 
-      <div className="mx-auto mb-10 max-w-6xl">
+      <div className="mb-10 w-full">
         <MoviesFilters genres={genres} state={browseState} />
       </div>
 
       {data.results.length === 0 ? (
-        <div className="mx-auto max-w-6xl rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-16 text-center">
+        <div className="w-full rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-16 text-center">
           <p className="text-lg font-medium text-foreground">No movies match these filters</p>
           <p className="mt-2 text-sm text-muted-foreground">
             Try a lower minimum rating, fewer genres, or set release year and rating back to “Any”.
@@ -53,7 +53,7 @@ export default async function MoviesPage({ searchParams }: PageProps) {
       ) : (
         <>
           <ul
-            className="mx-auto grid max-w-6xl list-none grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+            className="grid w-full list-none grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
             role="list"
           >
             {data.results.map((movie) => (
@@ -63,7 +63,7 @@ export default async function MoviesPage({ searchParams }: PageProps) {
             ))}
           </ul>
 
-          <div className="mx-auto mt-12 max-w-6xl">
+          <div className="mt-12 w-full">
             <MoviesPagination
               state={browseState}
               totalPages={data.total_pages}
