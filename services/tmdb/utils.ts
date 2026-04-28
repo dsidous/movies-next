@@ -79,7 +79,7 @@ export function formatImageUrlWithBase(
   imageBaseUrl: string,
   size: 'w500' | 'original' | 'w185' | 'w92' = 'w500',
 ) {
-  if (!path) return '/placeholder-poster.png'; // TODO: Add a placeholder image
+  if (!path) return '/placeholder-poster.png';
   return `${imageBaseUrl}${size}${path}`;
 }
 
