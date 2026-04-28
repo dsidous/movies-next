@@ -1,18 +1,21 @@
 'use client';
 
+import { type ComponentProps, useCallback, useMemo, useTransition } from 'react';
+
 import { usePathname, useRouter } from 'next/navigation';
-import { useCallback, useMemo, useTransition, type ComponentProps } from 'react';
 
-import type { Genre } from '@services/tmdb';
-
-import { cn } from '@/lib/utils';
 import type { TvBrowseSearchState } from '@/lib/tv-discover-search-params';
-import { serializeTvBrowseSearchParams, TV_DISCOVER_SORT_OPTIONS } from '@/lib/tv-discover-search-params';
+import {
+  TV_DISCOVER_SORT_OPTIONS,
+  serializeTvBrowseSearchParams,
+} from '@/lib/tv-discover-search-params';
+import { cn } from '@/lib/utils';
+import type { Genre } from '@services/tmdb';
+import { ChevronDown, RotateCcw } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ChevronDown, RotateCcw } from 'lucide-react';
 
 const TV_DISCOVER_RATING_GREATER_THAN_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: 'Any rating' },
@@ -52,7 +55,7 @@ function NativeFilterSelect({ className, children, ...props }: ComponentProps<'s
         {children}
       </select>
       <ChevronDown
-        className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 opacity-60"
+        className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 opacity-60"
         aria-hidden
       />
     </div>
@@ -70,7 +73,10 @@ export function TvDiscoverFilters({ genres, state, className }: TvDiscoverFilter
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
 
-  const sortedGenres = useMemo(() => [...genres].sort((a, b) => a.name.localeCompare(b.name)), [genres]);
+  const sortedGenres = useMemo(
+    () => [...genres].sort((a, b) => a.name.localeCompare(b.name)),
+    [genres],
+  );
 
   const genreNameById = useMemo(
     () => new Map(sortedGenres.map((g) => [g.id, g.name])),

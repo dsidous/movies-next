@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { PersonPopularGrid } from '@/components/person/person-popular-grid';
+import { PersonPopularInfinite } from '@/components/person/person-popular-infinite';
 import { getPopularPeople } from '@services/tmdb';
 
 export const metadata: Metadata = {
@@ -23,7 +23,7 @@ export default async function PersonsPage() {
           Trending and highly searched on TMDB.
         </p>
         <div className="mt-8 min-w-0 sm:mt-10">
-          <PersonPopularGrid people={data.results} />
+          <PersonPopularInfinite initial={data} />
         </div>
       </div>
     </div>
