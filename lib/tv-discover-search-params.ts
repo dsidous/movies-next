@@ -105,7 +105,6 @@ export function tvBrowseStateToDiscoverQuery(
 
 export function serializeTvBrowseSearchParams(state: TvBrowseSearchState): string {
   const p = new URLSearchParams();
-  if (state.page > 1) p.set('page', String(state.page));
   if (state.sort !== DEFAULT_SORT) p.set('sort', state.sort);
   if (state.genreIds.length > 0) p.set('genres', state.genreIds.sort((a, b) => a - b).join(','));
   if (state.year !== null) p.set('year', String(state.year));

@@ -1,14 +1,15 @@
 import type { Metadata } from 'next';
 
+import type { TvDiscoverFilters as TvDiscoverFilterParams } from '@/lib/actions/discover';
 import {
   parseTvBrowseSearchParams,
+  serializeTvBrowseSearchParams,
   tvBrowseStateToDiscoverQuery,
 } from '@/lib/tv-discover-search-params';
 import { discoverTv, getTvGenres } from '@services/tmdb';
 
-import { TvDiscoverCard } from '@/components/tv/tv-discover-card';
+import { TvDiscoverInfinite } from '@/components/tv/tv-discover-infinite';
 import { TvDiscoverFilters } from '@/components/tv/tv-discover-filters';
-import { TvDiscoverPagination } from '@/components/tv/tv-discover-pagination';
 
 export const metadata: Metadata = {
   title: 'Browse TV series | Movie Search',
@@ -23,11 +24,19 @@ type PageProps = {
 export default async function TvDiscoverPage({ searchParams }: PageProps) {
   const raw = (await searchParams) ?? {};
   const browseState = parseTvBrowseSearchParams(raw);
-  const query = tvBrowseStateToDiscoverQuery(browseState);
+  const filters: TvDiscoverFilterParams = {
+    sort: browseState.sort,
+    genreIds: browseState.genreIds,
+    year: browseState.year,
+    voteGreaterThan: browseState.voteGreaterThan,
+  };
+  const query = tvBrowseStateToDiscoverQuery({ ...filters, page: 1 });
 
   const [genres, data] = await Promise.all([getTvGenres(), discoverTv(query)]);
 
   const genreMap = new Map(genres.map((g) => [g.id, g.name]));
+
+  const discoverKey = serializeTvBrowseSearchParams({ ...browseState, page: 1 });
 
   return (
     <div className="w-full min-w-0 px-4 py-8 md:px-6 lg:px-10">
@@ -52,29 +61,12 @@ export default async function TvDiscoverPage({ searchParams }: PageProps) {
           </p>
         </div>
       ) : (
-        <>
-          <ul
-            className="grid w-full list-none grid-cols-[repeat(auto-fit,minmax(18rem,1fr))] content-start justify-items-stretch gap-3 sm:gap-4"
-            role="list"
-          >
-            {data.results.map((show) => (
-              <li
-                key={show.id}
-                className="w-full max-w-full min-w-0 only:max-w-48 only:justify-self-start"
-              >
-                <TvDiscoverCard show={show} genreMap={genreMap} />
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-12 w-full">
-            <TvDiscoverPagination
-              state={browseState}
-              totalPages={data.total_pages}
-              totalResults={data.total_results}
-            />
-          </div>
-        </>
+        <TvDiscoverInfinite
+          key={discoverKey || 'default'}
+          initial={data}
+          filters={filters}
+          genreMap={genreMap}
+        />
       )}
     </div>
   );
