@@ -53,11 +53,14 @@ export default async function MoviesPage({ searchParams }: PageProps) {
       ) : (
         <>
           <ul
-            className="grid w-full list-none grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+            className="grid w-full list-none grid-cols-[repeat(auto-fit,minmax(18rem,1fr))] content-start justify-items-stretch gap-3 sm:gap-4"
             role="list"
           >
             {data.results.map((movie) => (
-              <li key={movie.id}>
+              <li
+                key={movie.id}
+                className="w-full max-w-full min-w-0 only:max-w-148 only:justify-self-start"
+              >
                 <MovieDiscoverCard movie={movie} genreMap={genreMap} />
               </li>
             ))}
