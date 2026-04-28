@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { getConfiguration } from '../configuration/api';
 import { tmdbFetch } from '../client';
+import { getConfiguration } from '../configuration/api';
 import {
   type DetailIncludeQuery,
   formatImageUrlWithBase,
@@ -13,15 +13,16 @@ import type {
   TvDetails,
   TvDetailsRow,
   TvDetailsWithAppends,
-  TvNetworkDisplay,
   TvEpisode,
   TvEpisodeRow,
   TvListItem,
   TvListItemRow,
+  TvNetworkDisplay,
   TvSeason,
   TvSeasonRow,
 } from './schema';
 import {
+  TrendingTvResponseSchema,
   TvAccountStatesSchema,
   TvAggregateCreditsResponseSchema,
   TvAiringTodayResponseSchema,
@@ -47,7 +48,6 @@ import {
   TvSeasonChangesResponseSchema,
   TvSeasonRowSchema,
   TvSimilarResponseSchema,
-  TrendingTvResponseSchema,
   TvTopRatedResponseSchema,
   TvTranslationsResponseSchema,
   TvVideosResponseSchema,
@@ -125,7 +125,11 @@ function enrichTvEpisode(row: TvEpisodeRow, imageBaseUrl: string): TvEpisode {
 }
 
 // --- /tv (global) — GET
-export async function getTvListChanges(params?: { end_date?: string; start_date?: string; page?: number }) {
+export async function getTvListChanges(params?: {
+  end_date?: string;
+  start_date?: string;
+  page?: number;
+}) {
   const data = await tmdbFetch<z.input<typeof TvListChangesResponseSchema>>(
     tmdbPath(tvEndpoints.changes, params as QueryRecord),
   );
@@ -140,9 +144,7 @@ export async function getLatestTv() {
   return enrichTvDetails(TvDetailsRowSchema.parse(data), images.imageBaseUrl);
 }
 
-export async function getAiringTodayTv(
-  params?: Paged & { language?: string; timezone?: string },
-) {
+export async function getAiringTodayTv(params?: Paged & { language?: string; timezone?: string }) {
   const [data, { images }] = await Promise.all([
     tmdbFetch<z.input<typeof TvAiringTodayResponseSchema>>(
       tmdbPath(tvEndpoints.airingToday, params as QueryRecord),
@@ -150,7 +152,10 @@ export async function getAiringTodayTv(
     getConfiguration(),
   ]);
   const parsed = TvAiringTodayResponseSchema.parse(data);
-  return { ...parsed, results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)) };
+  return {
+    ...parsed,
+    results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)),
+  };
 }
 
 export async function getOnTheAirTv(params?: PagedWithRegion) {
@@ -161,7 +166,10 @@ export async function getOnTheAirTv(params?: PagedWithRegion) {
     getConfiguration(),
   ]);
   const parsed = TvOnTheAirResponseSchema.parse(data);
-  return { ...parsed, results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)) };
+  return {
+    ...parsed,
+    results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)),
+  };
 }
 
 export async function getPopularTv(params?: PagedWithRegion) {
@@ -172,7 +180,10 @@ export async function getPopularTv(params?: PagedWithRegion) {
     getConfiguration(),
   ]);
   const parsed = TvPopularResponseSchema.parse(data);
-  return { ...parsed, results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)) };
+  return {
+    ...parsed,
+    results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)),
+  };
 }
 
 export async function getTopRatedTv(params?: PagedWithRegion) {
@@ -183,7 +194,10 @@ export async function getTopRatedTv(params?: PagedWithRegion) {
     getConfiguration(),
   ]);
   const parsed = TvTopRatedResponseSchema.parse(data);
-  return { ...parsed, results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)) };
+  return {
+    ...parsed,
+    results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)),
+  };
 }
 
 export async function getTrendingTv(time: 'day' | 'week', params?: PagedListQuery) {
@@ -194,7 +208,10 @@ export async function getTrendingTv(time: 'day' | 'week', params?: PagedListQuer
     getConfiguration(),
   ]);
   const parsed = TrendingTvResponseSchema.parse(data);
-  return { ...parsed, results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)) };
+  return {
+    ...parsed,
+    results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)),
+  };
 }
 
 // --- /tv/{series_id} — GET
@@ -210,9 +227,7 @@ export async function getTv(
   },
 ): Promise<TvDetailsWithAppends> {
   const [raw, { images }] = await Promise.all([
-    tmdbFetch<Record<string, unknown>>(
-      tmdbPathWithInclude(tvEndpoints.details(seriesId), params),
-    ),
+    tmdbFetch<Record<string, unknown>>(tmdbPathWithInclude(tvEndpoints.details(seriesId), params)),
     getConfiguration(),
   ]);
   const row = TvDetailsRowSchema.parse(raw);
@@ -329,7 +344,10 @@ export async function getTvRecommendations(seriesId: number, params?: ListQuery)
     getConfiguration(),
   ]);
   const parsed = TvRecommendationsResponseSchema.parse(data);
-  return { ...parsed, results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)) };
+  return {
+    ...parsed,
+    results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)),
+  };
 }
 
 export async function getTvReviews(
@@ -357,7 +375,10 @@ export async function getTvSimilar(seriesId: number, params?: ListQuery) {
     getConfiguration(),
   ]);
   const parsed = TvSimilarResponseSchema.parse(data);
-  return { ...parsed, results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)) };
+  return {
+    ...parsed,
+    results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)),
+  };
 }
 
 export async function getTvTranslations(seriesId: number) {
@@ -447,10 +468,7 @@ export async function getTvSeasonImages(
   return TvImagesResponseSchema.parse(data);
 }
 
-export async function getTvSeasonTranslations(
-  seriesId: number,
-  seasonNumber: number,
-) {
+export async function getTvSeasonTranslations(seriesId: number, seasonNumber: number) {
   const data = await tmdbFetch<z.input<typeof TvTranslationsResponseSchema>>(
     tvEndpoints.seasonTranslations(seriesId, seasonNumber),
   );
@@ -468,10 +486,7 @@ export async function getTvSeasonVideos(
   return TvVideosResponseSchema.parse(data);
 }
 
-export async function getTvSeasonWatchProviders(
-  seriesId: number,
-  seasonNumber: number,
-) {
+export async function getTvSeasonWatchProviders(seriesId: number, seasonNumber: number) {
   const data = await tmdbFetch<z.input<typeof TvWatchProvidersResponseSchema>>(
     tvEndpoints.seasonWatchProviders(seriesId, seasonNumber),
   );
@@ -490,10 +505,7 @@ export async function getTvEpisode(
 ) {
   const [data, { images }] = await Promise.all([
     tmdbFetch<z.input<typeof TvEpisodeRowSchema>>(
-      tmdbPathWithInclude(
-        tvEndpoints.episode(seriesId, seasonNumber, episodeNumber),
-        params,
-      ),
+      tmdbPathWithInclude(tvEndpoints.episode(seriesId, seasonNumber, episodeNumber), params),
     ),
     getConfiguration(),
   ]);
@@ -581,20 +593,14 @@ export async function getTvEpisodeGroupDetails(tvEpisodeGroupId: string) {
   return TvEpisodeGroupDetailsSchema.parse(data);
 }
 
-export async function getTvSeasonChanges(
-  seasonId: string,
-  params?: IdChangesPathQuery,
-) {
+export async function getTvSeasonChanges(seasonId: string, params?: IdChangesPathQuery) {
   const data = await tmdbFetch<z.input<typeof TvSeasonChangesResponseSchema>>(
     tmdbPath(tvEndpoints.seasonChanges(seasonId), params as QueryRecord),
   );
   return TvSeasonChangesResponseSchema.parse(data);
 }
 
-export async function getTvEpisodeChanges(
-  episodeId: string,
-  params?: IdChangesPathQuery,
-) {
+export async function getTvEpisodeChanges(episodeId: string, params?: IdChangesPathQuery) {
   const data = await tmdbFetch<z.input<typeof TvEpisodeChangesResponseSchema>>(
     tmdbPath(tvEndpoints.episodeChanges(episodeId), params as QueryRecord),
   );

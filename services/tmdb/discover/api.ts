@@ -1,19 +1,16 @@
 import { z } from 'zod';
 
-import { getConfiguration } from '../configuration/api';
 import { tmdbFetch } from '../client';
-import { formatImageUrlWithBase, tmdbPath } from '../utils';
-import { discoverEndpoints } from './endpoints';
+import { getConfiguration } from '../configuration/api';
 import type { MovieListItem, MovieListItemRow } from '../movie/schema';
 import type { TvListItem, TvListItemRow } from '../tv/schema';
+import { formatImageUrlWithBase, tmdbPath } from '../utils';
+import { discoverEndpoints } from './endpoints';
 import { DiscoverMovieResponseSchema, DiscoverTvResponseSchema } from './schema';
 
 type QueryRecord = Record<string, string | number | boolean | null | undefined>;
 
-function enrichMovieListItem(
-  item: MovieListItemRow,
-  imageBaseUrl: string,
-): MovieListItem {
+function enrichMovieListItem(item: MovieListItemRow, imageBaseUrl: string): MovieListItem {
   return {
     ...item,
     posterUrl: formatImageUrlWithBase(item.poster_path, imageBaseUrl, 'w500'),
@@ -59,9 +56,7 @@ export async function discoverMovies(query?: QueryRecord) {
  */
 export async function discoverTv(query?: QueryRecord) {
   const [data, { images }] = await Promise.all([
-    tmdbFetch<z.input<typeof DiscoverTvResponseSchema>>(
-      tmdbPath(discoverEndpoints.tv, query),
-    ),
+    tmdbFetch<z.input<typeof DiscoverTvResponseSchema>>(tmdbPath(discoverEndpoints.tv, query)),
     getConfiguration(),
   ]);
   const parsed = DiscoverTvResponseSchema.parse(data);

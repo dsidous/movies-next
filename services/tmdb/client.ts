@@ -1,6 +1,6 @@
 export async function tmdbFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${process.env.NEXT_PUBLIC_TMDB_BASE_URL}${endpoint}`;
-  
+
   const response = await fetch(url, {
     ...options,
     headers: {

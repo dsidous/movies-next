@@ -76,7 +76,13 @@ function SeasonEpisodesPanel({
   useEffect(() => {
     if (!isExpanded) return;
     if (data) return;
-    void load();
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (!cancelled) void load();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [isExpanded, data, load]);
 
   const episodes: TvEpisode[] = data?.episodes ?? [];
