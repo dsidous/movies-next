@@ -141,13 +141,13 @@ export function TvDiscoverFilters({ genres, state, className }: TvDiscoverFilter
   return (
     <div
       className={cn(
-        'rounded-2xl border border-border/70 bg-muted/40 p-4 shadow-sm backdrop-blur-sm md:p-5',
+        'w-full rounded-2xl border border-border/70 bg-muted/40 p-4 shadow-sm backdrop-blur-sm md:p-5',
         pending && 'opacity-80',
         className,
       )}
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-12 lg:gap-4">
+      <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="grid min-w-0 w-full flex-1 gap-3 sm:grid-cols-2 lg:grid-cols-12 lg:gap-4">
           <label className="flex flex-col gap-1.5 lg:col-span-3">
             <span className="text-xs font-medium text-muted-foreground">Sort by</span>
             <NativeFilterSelect
