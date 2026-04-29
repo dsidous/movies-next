@@ -5,6 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
+import { Show, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs';
 import { Menu } from 'lucide-react';
 
 import { MainNav, MainNavList } from '@/components/layout/main-nav';
@@ -53,6 +54,23 @@ export function SiteHeader({ className }: { className?: string }) {
         <div className="min-w-0 flex-1 md:max-w-md md:flex-none">
           <MultiSearch />
         </div>
+        <Show when="signed-out">
+          <div className="flex shrink-0 items-center gap-2">
+            <SignInButton mode="modal">
+              <Button type="button" variant="outline" size="default">
+                Sign In
+              </Button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <Button type="button" variant="default" size="default">
+                Sign Up
+              </Button>
+            </SignUpButton>
+          </div>
+        </Show>
+        <Show when="signed-in">
+          <UserButton />
+        </Show>
       </div>
     </header>
   );
