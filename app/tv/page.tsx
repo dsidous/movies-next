@@ -6,6 +6,7 @@ import {
   serializeTvBrowseSearchParams,
   tvBrowseStateToDiscoverQuery,
 } from '@/lib/tv-discover-search-params';
+import { getWatchlistedKeys } from '@/lib/watchlisted-keys';
 import { discoverTv, getTvGenres } from '@services/tmdb';
 
 import { TvDiscoverFilters } from '@/components/tv/tv-discover-filters';
@@ -32,7 +33,11 @@ export default async function TvDiscoverPage({ searchParams }: PageProps) {
   };
   const query = tvBrowseStateToDiscoverQuery({ ...filters, page: 1 });
 
-  const [genres, data] = await Promise.all([getTvGenres(), discoverTv(query)]);
+  const [genres, data, watchlistedKeys] = await Promise.all([
+    getTvGenres(),
+    discoverTv(query),
+    getWatchlistedKeys(),
+  ]);
 
   const genreMap = new Map(genres.map((g) => [g.id, g.name]));
 
@@ -77,6 +82,7 @@ export default async function TvDiscoverPage({ searchParams }: PageProps) {
             initial={data}
             filters={filters}
             genreMap={genreMap}
+            watchlistedKeys={watchlistedKeys}
           />
         </div>
       )}

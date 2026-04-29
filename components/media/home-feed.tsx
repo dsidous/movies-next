@@ -1,6 +1,7 @@
 import type { MovieListItem } from '@services/tmdb/movie/schema';
 import type { TvListItem } from '@services/tmdb/tv/schema';
 
+import { watchlistLookupKey } from '@/lib/watchlist-key';
 import { MediaCard } from '@/components/media/media-card';
 import { MediaRow } from '@/components/media/media-row';
 
@@ -12,9 +13,11 @@ export type HomeFeedRow = MovieRow | TvRow;
 
 type HomeFeedProps = {
   rows: HomeFeedRow[];
+  watchlistedKeys: string[];
 };
 
-export function HomeFeed({ rows }: HomeFeedProps) {
+export function HomeFeed({ rows, watchlistedKeys }: HomeFeedProps) {
+  const saved = new Set(watchlistedKeys);
   return (
     <div className="w-full min-w-0 space-y-6 px-4 pt-2 pb-8 sm:space-y-8 sm:px-5 sm:pb-10 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
       {rows.map((row) => {
@@ -35,6 +38,7 @@ export function HomeFeed({ rows }: HomeFeedProps) {
                   posterUrl={m.posterUrl}
                   voteAverage={m.vote_average}
                   voteCount={m.vote_count}
+                  isWatchlisted={saved.has(watchlistLookupKey('movie', m.id))}
                 />
               ))}
             </MediaRow>
@@ -54,6 +58,7 @@ export function HomeFeed({ rows }: HomeFeedProps) {
                 posterUrl={t.posterUrl}
                 voteAverage={t.vote_average}
                 voteCount={t.vote_count}
+                isWatchlisted={saved.has(watchlistLookupKey('tv', t.id))}
               />
             ))}
           </MediaRow>

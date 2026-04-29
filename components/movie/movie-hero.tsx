@@ -2,14 +2,15 @@ import Image from 'next/image';
 
 import { cn } from '@/lib/utils';
 import type { MovieDetails } from '@services/tmdb/movie/schema';
-import { Plus, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { HeroMyListButton } from '@/components/watchlist/hero-my-list-button';
 
 import { formatRuntime } from './movie-helpers';
 
 type MovieHeroProps = {
   movie: MovieDetails;
+  isWatchlisted: boolean;
   className?: string;
 };
 
@@ -19,7 +20,7 @@ function userScore(voteAverage: number, voteCount: number) {
   return voteAverage.toFixed(1);
 }
 
-export function MovieHero({ movie, className }: MovieHeroProps) {
+export function MovieHero({ movie, isWatchlisted, className }: MovieHeroProps) {
   const bg = movie.backdropUrl ?? movie.posterUrl;
   const year = movie.release_date ? movie.release_date.split('-')[0] : null;
   const runtime = formatRuntime(movie.runtime);
@@ -89,14 +90,13 @@ export function MovieHero({ movie, className }: MovieHeroProps) {
         )}
 
         <div className="mt-5 flex flex-wrap items-center gap-2 sm:mt-6 sm:gap-3">
-          <Button
-            type="button"
-            variant="secondary"
-            className="border-zinc-600 bg-zinc-800/80 text-white hover:bg-zinc-700/90"
-          >
-            <Plus className="size-5" aria-hidden />
-            My List
-          </Button>
+          <HeroMyListButton
+            key={`movie-${movie.id}-${isWatchlisted}`}
+            mediaType="movie"
+            mediaId={String(movie.id)}
+            title={movie.title}
+            initialIsSaved={isWatchlisted}
+          />
         </div>
       </div>
     </section>

@@ -8,6 +8,8 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Star } from 'lucide-react';
 
+import { BookmarkButton } from '../watchlist/bookmarkButton';
+
 const HOVER_SCALE_DELAY_MS = 220;
 
 const posterSizes =
@@ -19,6 +21,7 @@ type MediaCardProps = {
   year: string;
   posterUrl: string;
   type: 'movie' | 'tv';
+  isWatchlisted?: boolean;
   voteAverage?: number;
   voteCount?: number;
   subtitle?: string;
@@ -31,6 +34,7 @@ export function MediaCard({
   year,
   posterUrl,
   type,
+  isWatchlisted = false,
   voteAverage,
   voteCount,
   subtitle,
@@ -95,6 +99,13 @@ export function MediaCard({
       onPointerLeave={onPointerLeave}
       onPointerCancel={onPointerCancel}
     >
+      <BookmarkButton
+        key={`${type}-${id}-${isWatchlisted}`}
+        mediaType={type}
+        mediaId={id.toString()}
+        title={title}
+        initialIsSaved={isWatchlisted}
+      />
       <div
         className={cn(
           'relative aspect-2/3 overflow-hidden rounded-md bg-muted shadow transition-transform duration-200',

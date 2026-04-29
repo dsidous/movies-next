@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 
 import type { MoviesDiscoverFilters } from '@/lib/actions/discover';
 import { discoverMoviesPageAction } from '@/lib/actions/discover';
+import { watchlistLookupKey } from '@/lib/watchlist-key';
 import type { MovieListItem } from '@services/tmdb/movie/schema';
 
 import { MovieDiscoverCard } from '@/components/movies/movie-discover-card';
@@ -58,10 +59,17 @@ type MoviesDiscoverInfiniteProps = {
   initial: DiscoverMoviesPayload;
   filters: MoviesDiscoverFilters;
   genreMap: Map<number, string>;
+  watchlistedKeys: string[];
 };
 
-export function MoviesDiscoverInfinite({ initial, filters, genreMap }: MoviesDiscoverInfiniteProps) {
+export function MoviesDiscoverInfinite({
+  initial,
+  filters,
+  genreMap,
+  watchlistedKeys,
+}: MoviesDiscoverInfiniteProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const saved = new Set(watchlistedKeys);
 
   const filterKey = moviesFilterQueryKey(filters);
 
@@ -128,7 +136,11 @@ export function MoviesDiscoverInfinite({ initial, filters, genreMap }: MoviesDis
             key={movie.id}
             className="w-full max-w-full min-w-0 only:max-w-148 only:justify-self-start"
           >
-            <MovieDiscoverCard movie={movie} genreMap={genreMap} />
+            <MovieDiscoverCard
+              movie={movie}
+              genreMap={genreMap}
+              isWatchlisted={saved.has(watchlistLookupKey('movie', movie.id))}
+            />
           </li>
         ))}
       </ul>

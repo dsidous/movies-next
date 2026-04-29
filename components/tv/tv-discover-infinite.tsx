@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 
 import type { TvDiscoverFilters } from '@/lib/actions/discover';
 import { discoverTvPageAction } from '@/lib/actions/discover';
+import { watchlistLookupKey } from '@/lib/watchlist-key';
 import type { TvListItem } from '@services/tmdb/tv/schema';
 
 import { TvDiscoverCard } from '@/components/tv/tv-discover-card';
@@ -58,10 +59,17 @@ type TvDiscoverInfiniteProps = {
   initial: DiscoverTvPayload;
   filters: TvDiscoverFilters;
   genreMap: Map<number, string>;
+  watchlistedKeys: string[];
 };
 
-export function TvDiscoverInfinite({ initial, filters, genreMap }: TvDiscoverInfiniteProps) {
+export function TvDiscoverInfinite({
+  initial,
+  filters,
+  genreMap,
+  watchlistedKeys,
+}: TvDiscoverInfiniteProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const saved = new Set(watchlistedKeys);
 
   const filterKey = tvFilterQueryKey(filters);
 
@@ -128,7 +136,11 @@ export function TvDiscoverInfinite({ initial, filters, genreMap }: TvDiscoverInf
             key={show.id}
             className="w-full max-w-full min-w-0 only:max-w-48 only:justify-self-start"
           >
-            <TvDiscoverCard show={show} genreMap={genreMap} />
+            <TvDiscoverCard
+              show={show}
+              genreMap={genreMap}
+              isWatchlisted={saved.has(watchlistLookupKey('tv', show.id))}
+            />
           </li>
         ))}
       </ul>

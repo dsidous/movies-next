@@ -1,7 +1,7 @@
+import { MediaCard } from '@/components/media/media-card';
+import { watchlistLookupKey } from '@/lib/watchlist-key';
 import { cn } from '@/lib/utils';
 import type { PersonCreditCardItem } from '@services/tmdb/person/schema';
-
-import { MediaCard } from '@/components/media/media-card';
 
 const SECTION_CAP = 48;
 
@@ -12,14 +12,18 @@ function PersonCreditSubsection({
   id,
   title,
   items,
+  watchlistedKeys,
   className,
 }: {
   id: string;
   title: string;
   items: PersonCreditCardItem[];
+  watchlistedKeys: string[];
   className?: string;
 }) {
   if (items.length === 0) return null;
+
+  const saved = new Set(watchlistedKeys);
 
   return (
     <section className={cn('min-w-0', className)} aria-labelledby={id}>
@@ -45,6 +49,7 @@ function PersonCreditSubsection({
               voteCount={c.vote_count}
               subtitle={c.character || undefined}
               className="w-full! max-w-full min-w-0 snap-none"
+              isWatchlisted={saved.has(watchlistLookupKey(c.type, c.id))}
             />
           </li>
         ))}
@@ -55,10 +60,11 @@ function PersonCreditSubsection({
 
 type PersonCreditsSectionProps = {
   items: PersonCreditCardItem[];
+  watchlistedKeys: string[];
   className?: string;
 };
 
-export function PersonCreditsSection({ items, className }: PersonCreditsSectionProps) {
+export function PersonCreditsSection({ items, watchlistedKeys, className }: PersonCreditsSectionProps) {
   const movies: PersonCreditCardItem[] = [];
   const series: PersonCreditCardItem[] = [];
   for (const c of items) {
@@ -77,8 +83,18 @@ export function PersonCreditsSection({ items, className }: PersonCreditsSectionP
       aria-label="Acting and appearances by medium"
     >
       <div className="flex flex-col gap-10 sm:gap-12">
-        <PersonCreditSubsection id="person-credits-movies" title="Movies" items={movieSlice} />
-        <PersonCreditSubsection id="person-credits-tv" title="TV shows" items={tvSlice} />
+        <PersonCreditSubsection
+          id="person-credits-movies"
+          title="Movies"
+          items={movieSlice}
+          watchlistedKeys={watchlistedKeys}
+        />
+        <PersonCreditSubsection
+          id="person-credits-tv"
+          title="TV shows"
+          items={tvSlice}
+          watchlistedKeys={watchlistedKeys}
+        />
       </div>
     </section>
   );

@@ -1,8 +1,11 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 
 import type { MovieListItem } from '@services/tmdb';
 
+import { BookmarkButton } from '@/components/watchlist/bookmarkButton';
 import { cn } from '@/lib/utils';
 import { Calendar, Globe2, Star, TrendingUp } from 'lucide-react';
 
@@ -13,10 +16,11 @@ function genreLabels(ids: number[], genreMap: Map<number, string>): string[] {
 type MovieDiscoverCardProps = {
   movie: MovieListItem;
   genreMap: Map<number, string>;
+  isWatchlisted?: boolean;
   className?: string;
 };
 
-export function MovieDiscoverCard({ movie, genreMap, className }: MovieDiscoverCardProps) {
+export function MovieDiscoverCard({ movie, genreMap, isWatchlisted = false, className }: MovieDiscoverCardProps) {
   const genres = genreLabels(movie.genre_ids, genreMap);
   const overview =
     movie.overview?.trim() ||
@@ -38,6 +42,13 @@ export function MovieDiscoverCard({ movie, genreMap, className }: MovieDiscoverC
         className="flex min-h-0 flex-1 flex-col outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <div className="relative aspect-2/3 w-full overflow-hidden bg-muted">
+          <BookmarkButton
+            key={`movie-${movie.id}-${isWatchlisted}`}
+            mediaType="movie"
+            mediaId={String(movie.id)}
+            title={movie.title}
+            initialIsSaved={isWatchlisted}
+          />
           <Image
             src={movie.posterUrl}
             alt={movie.title}

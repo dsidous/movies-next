@@ -12,6 +12,8 @@ import { MovieVideosSection } from '@/components/movie/movie-videos-section';
 import { TvHero } from '@/components/tv/tv-hero';
 import { TvLatestSeasonSection } from '@/components/tv/tv-latest-season-section';
 import { TvSimilarSection } from '@/components/tv/tv-similar-section';
+import { watchlistLookupKey } from '@/lib/watchlist-key';
+import { getWatchlistedKeys } from '@/lib/watchlisted-keys';
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -40,12 +42,14 @@ export default async function TvDetailPage({ params }: PageProps) {
   const base = await Promise.all([
     getTv(id, { include: ['videos', 'credits', 'similar'] }),
     getConfiguration(),
+    getWatchlistedKeys(),
   ]).catch(() => null);
 
   if (base === null) notFound();
 
-  const [show, { images }] = base;
+  const [show, { images }, watchlistedKeys] = base;
   const { imageBaseUrl } = images;
+  const watchlistSaved = new Set(watchlistedKeys);
 
   const latestN = getLatestSeasonNumber(show);
   let latestSeason = null;
@@ -63,14 +67,14 @@ export default async function TvDetailPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-zinc-950 pb-10 text-zinc-100">
-      <TvHero show={show} seriesId={id} />
+      <TvHero show={show} seriesId={id} isWatchlisted={watchlistSaved.has(watchlistLookupKey('tv', id))} />
       <div className="w-full min-w-0 space-y-8 px-4 pt-4 sm:space-y-10 sm:px-5 sm:pt-6 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
         {latestSeason && (
           <TvLatestSeasonSection seriesId={id} season={latestSeason} />
         )}
         <MovieVideosSection videos={videos} />
         <MovieCastSection cast={cast} />
-        <TvSimilarSection items={similarResults} />
+        <TvSimilarSection items={similarResults} watchlistedKeys={watchlistedKeys} />
       </div>
     </div>
   );

@@ -4,13 +4,15 @@ import Link from 'next/link';
 import { formatAvgEpisodeRuntime, formatAirRange } from '@/lib/tv-helpers';
 import { cn } from '@/lib/utils';
 import type { TvDetails } from '@services/tmdb/tv/schema';
-import { List, Plus, Star } from 'lucide-react';
+import { List, Star } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { HeroMyListButton } from '@/components/watchlist/hero-my-list-button';
 
 type TvHeroProps = {
   show: TvDetails;
   seriesId: number;
+  isWatchlisted: boolean;
   className?: string;
 };
 
@@ -19,7 +21,7 @@ function userScore(voteAverage: number, voteCount: number) {
   return voteAverage.toFixed(1);
 }
 
-export function TvHero({ show, seriesId, className }: TvHeroProps) {
+export function TvHero({ show, seriesId, isWatchlisted, className }: TvHeroProps) {
   const bg = show.backdropUrl ?? show.posterUrl;
   const airRange = formatAirRange(show);
   const avgRun = formatAvgEpisodeRuntime(show.episode_run_time);
@@ -121,14 +123,13 @@ export function TvHero({ show, seriesId, className }: TvHeroProps) {
         )}
 
         <div className="mt-5 flex flex-wrap items-center gap-2 sm:mt-6 sm:gap-3">
-          <Button
-            type="button"
-            variant="secondary"
-            className="border-zinc-600 bg-zinc-800/80 text-white hover:bg-zinc-700/90"
-          >
-            <Plus className="size-5" aria-hidden />
-            My List
-          </Button>
+          <HeroMyListButton
+            key={`tv-${seriesId}-${isWatchlisted}`}
+            mediaType="tv"
+            mediaId={String(seriesId)}
+            title={show.name}
+            initialIsSaved={isWatchlisted}
+          />
           <Button
             asChild
             variant="secondary"

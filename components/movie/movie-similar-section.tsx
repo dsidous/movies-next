@@ -1,5 +1,6 @@
 import { MediaCard } from '@/components/media/media-card';
 import { MediaRow } from '@/components/media/media-row';
+import { watchlistLookupKey } from '@/lib/watchlist-key';
 import { cn } from '@/lib/utils';
 import type { MovieListItem } from '@services/tmdb/movie/schema';
 
@@ -8,14 +9,17 @@ const ROW_CAP = 18;
 type MovieSimilarSectionProps = {
   title?: string;
   items: MovieListItem[];
+  watchlistedKeys: string[];
   className?: string;
 };
 
 export function MovieSimilarSection({
   title = 'More like this',
   items,
+  watchlistedKeys,
   className,
 }: MovieSimilarSectionProps) {
+  const saved = new Set(watchlistedKeys);
   const slice = items.slice(0, ROW_CAP);
   if (slice.length === 0) return null;
 
@@ -32,6 +36,7 @@ export function MovieSimilarSection({
             posterUrl={m.posterUrl}
             voteAverage={m.vote_average}
             voteCount={m.vote_count}
+            isWatchlisted={saved.has(watchlistLookupKey('movie', m.id))}
           />
         ))}
       </MediaRow>

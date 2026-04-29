@@ -11,6 +11,7 @@ import {
 import { parseMovieIdParam } from '@/components/movie/movie-helpers';
 import { PersonCreditsSection } from '@/components/person/person-credits-section';
 import { PersonHero } from '@/components/person/person-hero';
+import { getWatchlistedKeys } from '@/lib/watchlisted-keys';
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -41,11 +42,12 @@ export default async function PersonDetailPage({ params }: PageProps) {
     getPerson(id),
     getPersonCombinedCredits(id),
     getConfiguration(),
+    getWatchlistedKeys(),
   ]).catch(() => null);
 
   if (data === null) notFound();
 
-  const [person, combined, { images }] = data;
+  const [person, combined, { images }, watchlistedKeys] = data;
   const { imageBaseUrl } = images;
 
   const creditItems = enrichPersonCombinedCastForDisplay(combined.cast, imageBaseUrl);
@@ -55,7 +57,7 @@ export default async function PersonDetailPage({ params }: PageProps) {
       <div className="w-full min-w-0 px-4 pt-6 sm:px-5 sm:pt-8 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
         <PersonHero person={person} />
         <div className="mt-8 space-y-8 sm:mt-10 sm:space-y-10">
-          <PersonCreditsSection items={creditItems} />
+          <PersonCreditsSection items={creditItems} watchlistedKeys={watchlistedKeys} />
         </div>
       </div>
     </div>
