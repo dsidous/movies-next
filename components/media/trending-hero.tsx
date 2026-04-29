@@ -37,22 +37,27 @@ export function TrendingHero({ spotlight, className }: TrendingHeroProps) {
   return (
     <section
       className={cn(
-        'relative isolate flex min-h-[min(32rem,75vh)] w-full flex-col justify-end sm:min-h-[min(36rem,78vh)] lg:min-h-[min(40rem,80vh)]',
+        'relative isolate flex min-h-[min(32rem,75vh)] w-full flex-col justify-end overflow-hidden sm:min-h-[min(36rem,78vh)] lg:min-h-[min(40rem,80vh)]',
         className,
       )}
       aria-label="Featured from trending"
     >
       {bg && (
-        <Image src={bg} alt="" fill priority className="object-cover object-top" sizes="100vw" />
+        <div className="absolute inset-0 z-0">
+          <Image
+            src={bg}
+            alt=""
+            fill
+            priority
+            className="object-cover object-center"
+            sizes="100vw"
+          />
+        </div>
       )}
 
-      {/* Light scrim: mostly show the artwork; only lift text contrast at the bottom */}
+      {/* Top ~70% stays clear; bottom fades to page background — same as `MovieHero` */}
       <div
-        className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0%,transparent_38%,rgb(0_0_0/0.28)_78%,rgb(0_0_0/0.45)_100%)]"
-        aria-hidden
-      />
-      <div
-        className="absolute inset-y-0 left-0 w-full max-w-3xl bg-linear-to-r from-black/10 to-transparent sm:max-w-4xl"
+        className="absolute inset-0 z-1 bg-[linear-gradient(to_bottom,transparent_0%,transparent_70%,var(--color-zinc-950)_100%)]"
         aria-hidden
       />
 
