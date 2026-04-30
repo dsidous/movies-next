@@ -11,6 +11,7 @@ import { Menu } from 'lucide-react';
 import { MainNav, MainNavList } from '@/components/layout/main-nav';
 import { MultiSearch } from '@/components/search/multi-search';
 import { Button } from '@/components/ui/button';
+import { SITE_NAME } from '@/lib/constants/site';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 export function SiteHeader({ className }: { className?: string }) {
@@ -44,7 +45,7 @@ export function SiteHeader({ className }: { className?: string }) {
         </Sheet>
 
         <Link href="/" className="shrink-0 text-lg font-semibold tracking-tight">
-          Movie Search
+          {SITE_NAME}
         </Link>
 
         <div className="hidden min-w-0 flex-1 items-center justify-center gap-2 md:flex">

@@ -11,6 +11,7 @@ import {
 import { parseMovieIdParam } from '@/components/movie/movie-helpers';
 import { PersonCreditsSection } from '@/components/person/person-credits-section';
 import { PersonHero } from '@/components/person/person-hero';
+import { SITE_NAME } from '@/lib/constants/site';
 import { getWatchlistedKeys } from '@/lib/watchlisted-keys';
 
 type PageProps = {
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   try {
     const person = await getPerson(id);
     return {
-      title: `${person.name} | Movie Search`,
+      title: `${person.name} | ${SITE_NAME}`,
       description:
         person.biography?.trim().slice(0, 180) || `Profile and credits for ${person.name}`,
     };

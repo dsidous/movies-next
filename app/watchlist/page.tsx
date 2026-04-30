@@ -7,6 +7,7 @@ import { MediaCard } from '@/components/media/media-card';
 import { WatchlistSignInPrompt } from '@/components/watchlist/watchlist-sign-in-prompt';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SITE_NAME } from '@/lib/constants/site';
 import { resolveWatchlistCards } from '@/services/watchlist-cards';
 import { watchlistService } from '@/services/watchlist';
 import { ensureUserByClerkId } from '@/services/users';
@@ -14,7 +15,7 @@ import { ensureUserByClerkId } from '@/services/users';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Watchlist | Movie Search',
+  title: `Watchlist | ${SITE_NAME}`,
   description: 'Movies and TV shows you have saved.',
 };
 

@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getTv } from '@services/tmdb';
 
 import { getSeasonsSummary, parseTmdbIdParam } from '@/lib/tv-helpers';
+import { SITE_NAME } from '@/lib/constants/site';
 import { TvSeasonsPageClient } from '@/components/tv/tv-seasons-page-client';
 import { TvSeasonsShowHeader } from '@/components/tv/tv-seasons-show-header';
 
@@ -18,7 +19,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   try {
     const show = await getTv(id);
     return {
-      title: `Seasons · ${show.name} | Movie Search`,
+      title: `Seasons · ${show.name} | ${SITE_NAME}`,
       description: `All seasons of ${show.name}.`,
     };
   } catch {

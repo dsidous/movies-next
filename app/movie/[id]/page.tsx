@@ -11,6 +11,7 @@ import {
 import { MovieHero } from '@/components/movie/movie-hero';
 import { MovieSimilarSection } from '@/components/movie/movie-similar-section';
 import { MovieVideosSection } from '@/components/movie/movie-videos-section';
+import { SITE_NAME } from '@/lib/constants/site';
 import { watchlistLookupKey } from '@/lib/watchlist-key';
 import { getWatchlistedKeys } from '@/lib/watchlisted-keys';
 
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   try {
     const movie = await getMovie(id);
     return {
-      title: `${movie.title} | Movie Search`,
+      title: `${movie.title} | ${SITE_NAME}`,
       description: movie.overview?.trim().slice(0, 180) || `Details for ${movie.title}`,
     };
   } catch {

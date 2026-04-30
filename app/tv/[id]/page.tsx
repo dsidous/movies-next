@@ -12,6 +12,7 @@ import { MovieVideosSection } from '@/components/movie/movie-videos-section';
 import { TvHero } from '@/components/tv/tv-hero';
 import { TvLatestSeasonSection } from '@/components/tv/tv-latest-season-section';
 import { TvSimilarSection } from '@/components/tv/tv-similar-section';
+import { SITE_NAME } from '@/lib/constants/site';
 import { watchlistLookupKey } from '@/lib/watchlist-key';
 import { getWatchlistedKeys } from '@/lib/watchlisted-keys';
 
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   try {
     const show = await getTv(id);
     return {
-      title: `${show.name} | Movie Search`,
+      title: `${show.name} | ${SITE_NAME}`,
       description: show.overview?.trim().slice(0, 180) || `Details for ${show.name}`,
     };
   } catch {

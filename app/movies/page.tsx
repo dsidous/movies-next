@@ -6,6 +6,7 @@ import {
   parseMoviesBrowseSearchParams,
   serializeMoviesBrowseSearchParams,
 } from '@/lib/movies-discover-search-params';
+import { SITE_NAME } from '@/lib/constants/site';
 import { getWatchlistedKeys } from '@/lib/watchlisted-keys';
 import { discoverMovies, getMovieGenres } from '@services/tmdb';
 
@@ -13,7 +14,7 @@ import { MoviesDiscoverInfinite } from '@/components/movies/movies-discover-infi
 import { MoviesFilters } from '@/components/movies/movies-filters';
 
 export const metadata: Metadata = {
-  title: 'Browse movies | Movie Search',
+  title: `Browse movies | ${SITE_NAME}`,
   description:
     'Discover movies from TMDB — sort by popularity, rating, or release date, filter by genre, year, and score.',
 };

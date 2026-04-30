@@ -2,10 +2,11 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { PersonPopularInfinite } from '@/components/person/person-popular-infinite';
+import { SITE_NAME } from '@/lib/constants/site';
 import { getPopularPeople } from '@services/tmdb';
 
 export const metadata: Metadata = {
-  title: 'Popular people | Movie Search',
+  title: `Popular people | ${SITE_NAME}`,
   description: 'Browse popular actors, directors, and other people on TMDB.',
 };
 

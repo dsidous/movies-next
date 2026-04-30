@@ -5,6 +5,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 
 import { SiteHeader } from '@/components/layout/site-header';
 import { QueryProvider } from '@/components/providers/query-provider';
+import { SITE_NAME } from '@/lib/constants/site';
 
 import './globals.css';
 
@@ -19,7 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Movie Search — Movies & TV',
+  title: `${SITE_NAME} — Movies & TV`,
   description: 'Discover popular movies, TV series, and people from TMDB.',
 };
 

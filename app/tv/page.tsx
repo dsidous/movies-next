@@ -6,6 +6,7 @@ import {
   serializeTvBrowseSearchParams,
   tvBrowseStateToDiscoverQuery,
 } from '@/lib/tv-discover-search-params';
+import { SITE_NAME } from '@/lib/constants/site';
 import { getWatchlistedKeys } from '@/lib/watchlisted-keys';
 import { discoverTv, getTvGenres } from '@services/tmdb';
 
@@ -13,7 +14,7 @@ import { TvDiscoverFilters } from '@/components/tv/tv-discover-filters';
 import { TvDiscoverInfinite } from '@/components/tv/tv-discover-infinite';
 
 export const metadata: Metadata = {
-  title: 'Browse TV series | Movie Search',
+  title: `Browse TV series | ${SITE_NAME}`,
   description:
     'Discover TV shows from TMDB — sort by popularity, rating, or first air date, filter by genre, year, and score.',
 };
