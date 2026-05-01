@@ -135,7 +135,11 @@ export function TvHero({ show, seriesId, isWatchlisted, className }: TvHeroProps
             variant="secondary"
             className="border-zinc-600/80 bg-zinc-900/50 text-white hover:bg-zinc-800/80"
           >
-            <Link href={`/tv/${seriesId}/seasons`} className="inline-flex items-center gap-2">
+            <Link
+              href={`/tv/${seriesId}/seasons`}
+              prefetch={false}
+              className="inline-flex items-center gap-2"
+            >
               <List className="size-4 shrink-0" aria-hidden />
               All seasons
             </Link>

@@ -42,6 +42,7 @@ export function TvDiscoverCard({ show, genreMap, isWatchlisted = false, classNam
     >
       <Link
         href={`/tv/${show.id}`}
+        prefetch={false}
         className="flex min-h-0 flex-1 flex-col outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <div className="relative aspect-2/3 w-full overflow-hidden bg-muted">

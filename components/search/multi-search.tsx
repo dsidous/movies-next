@@ -188,6 +188,7 @@ export function MultiSearch() {
                   <CommandItem key={`${r.media_type}-${r.id}`} className="p-0" asChild>
                     <Link
                       href={href}
+                      prefetch={false}
                       className="flex items-center gap-2 px-2 py-2"
                       onMouseDown={(e) => e.preventDefault()}
                     >

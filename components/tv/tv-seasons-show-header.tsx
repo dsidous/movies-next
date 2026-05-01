@@ -23,6 +23,7 @@ export function TvSeasonsShowHeader({ show, seriesId }: TvSeasonsShowHeaderProps
     <header className="border-b border-zinc-800/90 pb-8">
       <Link
         href={`/tv/${seriesId}`}
+        prefetch={false}
         className="inline-flex items-center gap-1.5 text-sm text-amber-300/90 transition-colors hover:text-amber-200"
       >
         <ArrowLeft className="size-4" aria-hidden />

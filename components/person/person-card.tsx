@@ -24,6 +24,7 @@ export function PersonCard({
   return (
     <Link
       href={`/person/${id}`}
+      prefetch={false}
       className={cn(
         'group block w-full no-underline select-none',
         'cursor-pointer rounded-md ring-offset-background outline-none focus-visible:ring-2 focus-visible:ring-ring',

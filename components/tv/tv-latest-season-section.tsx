@@ -48,6 +48,7 @@ export function TvLatestSeasonSection({ seriesId, season, className }: TvLatestS
         >
           <Link
             href={`/tv/${seriesId}/seasons`}
+            prefetch={false}
             className="inline-flex items-center gap-1 text-sm sm:text-base"
           >
             View all seasons
@@ -112,6 +113,7 @@ export function TvLatestSeasonSection({ seriesId, season, className }: TvLatestS
           <Link
             className="text-amber-300/90 underline-offset-2 hover:underline"
             href={`/tv/${seriesId}/seasons`}
+            prefetch={false}
           >
             all seasons
           </Link>{' '}

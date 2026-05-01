@@ -24,6 +24,7 @@ export function MovieCastSection({ cast, className }: MovieCastSectionProps) {
           <Link
             key={c.creditId || `${c.id}-${c.name}`}
             href={`/person/${c.id}`}
+            prefetch={false}
             className="group w-32 shrink-0 snap-start"
           >
             <div

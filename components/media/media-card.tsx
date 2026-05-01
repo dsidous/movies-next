@@ -82,6 +82,7 @@ export function MediaCard({
   return (
     <Link
       href={href}
+      prefetch={false}
       aria-label={year ? `${title} (${year})${ratingLabel}` : `${title}${ratingLabel}`}
       className={cn(
         'group relative block shrink-0 cursor-pointer snap-start no-underline select-none',

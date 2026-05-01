@@ -61,7 +61,9 @@ export default async function WatchlistPage() {
             </CardHeader>
             <CardContent>
               <Button asChild variant="secondary">
-                <Link href="/">Browse titles</Link>
+                <Link href="/" prefetch={false}>
+                  Browse titles
+                </Link>
               </Button>
             </CardContent>
           </Card>

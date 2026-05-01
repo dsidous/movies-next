@@ -2,7 +2,10 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   images: {
-    /** Bypass Vercel Image Optimization (free-tier quota). Images load directly from remote URLs. */
+    /**
+     * Serve TMDB URLs as-is (no `/_next/image`) → avoids Vercel Image Optimization cache writes
+     * and origin processing on the free tier.
+     */
     unoptimized: true,
     remotePatterns: [
       {

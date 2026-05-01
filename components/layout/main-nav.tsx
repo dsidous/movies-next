@@ -47,6 +47,7 @@ export function MainNav({ className }: { className?: string }) {
               <NavigationMenuLink asChild active={active}>
                 <Link
                   href={item.href}
+                  prefetch={false}
                   className={cn(navigationMenuTriggerStyle(), active && navLinkActive)}
                   aria-current={active ? 'page' : undefined}
                 >
@@ -75,7 +76,12 @@ export function MainNavList({ onNavigate }: { onNavigate?: () => void }) {
             className={cn('justify-start font-medium', active && navLinkActive)}
             asChild
           >
-            <Link href={item.href} onClick={onNavigate} aria-current={active ? 'page' : undefined}>
+            <Link
+              href={item.href}
+              prefetch={false}
+              onClick={onNavigate}
+              aria-current={active ? 'page' : undefined}
+            >
               {item.label}
             </Link>
           </Button>

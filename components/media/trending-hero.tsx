@@ -79,7 +79,9 @@ export function TrendingHero({ spotlight, className }: TrendingHeroProps) {
         )}
         <div className="mt-5 flex flex-wrap items-center gap-2 sm:mt-6 sm:gap-3">
           <Button asChild size="default" className="font-semibold text-zinc-950 shadow-lg">
-            <Link href={href}>More info</Link>
+            <Link href={href} prefetch={false}>
+              More info
+            </Link>
           </Button>
         </div>
       </div>

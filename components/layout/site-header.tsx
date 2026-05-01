@@ -44,7 +44,7 @@ export function SiteHeader({ className }: { className?: string }) {
           </SheetContent>
         </Sheet>
 
-        <Link href="/" className="shrink-0 text-lg font-semibold tracking-tight">
+        <Link href="/" prefetch={false} className="shrink-0 text-lg font-semibold tracking-tight">
           {SITE_NAME}
         </Link>
 
