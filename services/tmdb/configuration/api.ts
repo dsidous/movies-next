@@ -1,3 +1,5 @@
+import { unstable_cache } from 'next/cache';
+
 import { z } from 'zod';
 
 import { tmdbFetch } from '../client';
@@ -11,44 +13,70 @@ import {
   TimezoneGroupSchema,
 } from './schema';
 
-export async function getConfiguration() {
-  const data = await tmdbFetch<z.input<typeof ConfigurationSchema>>(
-    configurationEndpoints.details,
-  );
-  return ConfigurationSchema.parse(data);
-}
+// Configuration data is essentially static — cache for 24h
+const TTL = 60 * 60 * 24;
 
-export async function getConfigurationCountries() {
-  const data = await tmdbFetch<z.input<typeof CountrySchema>[]>(
-    configurationEndpoints.countries,
-  );
-  return z.array(CountrySchema).parse(data);
-}
+// This is called by nearly every other api.ts, so caching it is high-impact.
+export const getConfiguration = unstable_cache(
+  async () => {
+    const data = await tmdbFetch<z.input<typeof ConfigurationSchema>>(
+      configurationEndpoints.details,
+    );
+    return ConfigurationSchema.parse(data);
+  },
+  ['tmdb-configuration'],
+  { revalidate: TTL },
+);
 
-export async function getConfigurationJobs() {
-  const data = await tmdbFetch<z.input<typeof DepartmentJobsSchema>[]>(
-    configurationEndpoints.jobs,
-  );
-  return z.array(DepartmentJobsSchema).parse(data);
-}
+export const getConfigurationCountries = unstable_cache(
+  async () => {
+    const data = await tmdbFetch<z.input<typeof CountrySchema>[]>(configurationEndpoints.countries);
+    return z.array(CountrySchema).parse(data);
+  },
+  ['tmdb-configuration-countries'],
+  { revalidate: TTL },
+);
 
-export async function getConfigurationLanguages() {
-  const data = await tmdbFetch<z.input<typeof LanguageSchema>[]>(
-    configurationEndpoints.languages,
-  );
-  return z.array(LanguageSchema).parse(data);
-}
+export const getConfigurationJobs = unstable_cache(
+  async () => {
+    const data = await tmdbFetch<z.input<typeof DepartmentJobsSchema>[]>(
+      configurationEndpoints.jobs,
+    );
+    return z.array(DepartmentJobsSchema).parse(data);
+  },
+  ['tmdb-configuration-jobs'],
+  { revalidate: TTL },
+);
 
-export async function getConfigurationPrimaryTranslations() {
-  const data = await tmdbFetch<z.input<typeof PrimaryTranslationsSchema>>(
-    configurationEndpoints.primaryTranslations,
-  );
-  return PrimaryTranslationsSchema.parse(data);
-}
+export const getConfigurationLanguages = unstable_cache(
+  async () => {
+    const data = await tmdbFetch<z.input<typeof LanguageSchema>[]>(
+      configurationEndpoints.languages,
+    );
+    return z.array(LanguageSchema).parse(data);
+  },
+  ['tmdb-configuration-languages'],
+  { revalidate: TTL },
+);
 
-export async function getConfigurationTimezones() {
-  const data = await tmdbFetch<z.input<typeof TimezoneGroupSchema>[]>(
-    configurationEndpoints.timezones,
-  );
-  return z.array(TimezoneGroupSchema).parse(data);
-}
+export const getConfigurationPrimaryTranslations = unstable_cache(
+  async () => {
+    const data = await tmdbFetch<z.input<typeof PrimaryTranslationsSchema>>(
+      configurationEndpoints.primaryTranslations,
+    );
+    return PrimaryTranslationsSchema.parse(data);
+  },
+  ['tmdb-configuration-primary-translations'],
+  { revalidate: TTL },
+);
+
+export const getConfigurationTimezones = unstable_cache(
+  async () => {
+    const data = await tmdbFetch<z.input<typeof TimezoneGroupSchema>[]>(
+      configurationEndpoints.timezones,
+    );
+    return z.array(TimezoneGroupSchema).parse(data);
+  },
+  ['tmdb-configuration-timezones'],
+  { revalidate: TTL },
+);

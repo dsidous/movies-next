@@ -10,6 +10,11 @@ import { SearchMultiResponseSchema } from './schema';
 type QueryRecord = Record<string, string | number | boolean | null | undefined>;
 export type SearchMultiQuery = { query: string } & QueryRecord;
 
+// Search is intentionally NOT cached — queries are unique per user input and
+// caching them would waste memory while providing almost zero hit rate.
+// The fetch-level `next: { revalidate }` in client.ts still deduplicates
+// identical in-flight requests within the same render.
+
 function enrichSearchMultiItem(row: SearchMultiResultRow, imageBaseUrl: string): SearchMultiResult {
   if (row.media_type === 'person') {
     const { profile_path } = row as SearchMultiResultRow & { profile_path?: string | null };

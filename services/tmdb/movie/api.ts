@@ -1,3 +1,5 @@
+import { unstable_cache } from 'next/cache';
+
 import { z } from 'zod';
 
 import { tmdbFetch } from '../client';
@@ -46,9 +48,15 @@ import {
 type Paged = { page?: number };
 type PagedWithRegion = Paged & { region?: string };
 type ListMovieIdQuery = Paged;
-
 type MovieIdChangesPathQuery = { end_date?: string; start_date?: string } & Paged;
 type PagedListQuery = { page?: number };
+
+const TTL_SHORT = 60 * 60; // 1h  — lists that change frequently
+const TTL_LONG = 60 * 60 * 24; // 24h — detail/static data
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function enrichMovieListItem(item: MovieListItemRow, imageBaseUrl: string): MovieListItem {
   return {
@@ -92,7 +100,10 @@ export function enrichCastForDisplay(
   }));
 }
 
-// --- /movie (global) — GET
+// ---------------------------------------------------------------------------
+// Global list endpoints  (no cache — change logs / latest)
+// ---------------------------------------------------------------------------
+
 export async function getMovieListChanges(params?: {
   end_date?: string;
   start_date?: string;
@@ -112,138 +123,347 @@ export async function getLatestMovie() {
   return enrichMovieDetails(MovieDetailsRowSchema.parse(data), images.imageBaseUrl);
 }
 
-export async function getNowPlayingMovies(
-  params?: PagedWithRegion & {
-    language?: string;
-    'release_date.lte'?: string;
-    'release_date.gte'?: string;
+// ---------------------------------------------------------------------------
+// Frequently-changing lists  (TTL_SHORT — 1h)
+// ---------------------------------------------------------------------------
+
+export const getNowPlayingMovies = unstable_cache(
+  async (
+    params?: PagedWithRegion & {
+      language?: string;
+      'release_date.lte'?: string;
+      'release_date.gte'?: string;
+    },
+  ) => {
+    const [data, { images }] = await Promise.all([
+      tmdbFetch<z.input<typeof NowPlayingResponseSchema>>(
+        tmdbPath(
+          movieEndpoints.nowPlaying,
+          params as Record<string, string | number | boolean | null | undefined>,
+        ),
+      ),
+      getConfiguration(),
+    ]);
+    const parsed = NowPlayingResponseSchema.parse(data);
+    return {
+      ...parsed,
+      results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+    };
   },
-) {
-  const [data, { images }] = await Promise.all([
-    tmdbFetch<z.input<typeof NowPlayingResponseSchema>>(
-      tmdbPath(
-        movieEndpoints.nowPlaying,
-        params as Record<string, string | number | boolean | null | undefined>,
-      ),
-    ),
-    getConfiguration(),
-  ]);
-  const parsed = NowPlayingResponseSchema.parse(data);
-  return {
-    ...parsed,
-    results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
-  };
-}
+  ['tmdb-now-playing'],
+  { revalidate: TTL_SHORT },
+);
 
-export async function getPopularMovies(params?: PagedWithRegion) {
-  const [data, { images }] = await Promise.all([
-    tmdbFetch<z.input<typeof PopularResponseSchema>>(
-      tmdbPath(
-        movieEndpoints.popular,
-        params as Record<string, string | number | boolean | null | undefined>,
+export const getPopularMovies = unstable_cache(
+  async (params?: PagedWithRegion) => {
+    const [data, { images }] = await Promise.all([
+      tmdbFetch<z.input<typeof PopularResponseSchema>>(
+        tmdbPath(
+          movieEndpoints.popular,
+          params as Record<string, string | number | boolean | null | undefined>,
+        ),
       ),
-    ),
-    getConfiguration(),
-  ]);
-  const parsed = PopularResponseSchema.parse(data);
-  return {
-    ...parsed,
-    results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
-  };
-}
-
-export async function getTopRatedMovies(params?: PagedWithRegion) {
-  const [data, { images }] = await Promise.all([
-    tmdbFetch<z.input<typeof TopRatedResponseSchema>>(
-      tmdbPath(
-        movieEndpoints.topRated,
-        params as Record<string, string | number | boolean | null | undefined>,
-      ),
-    ),
-    getConfiguration(),
-  ]);
-  const parsed = TopRatedResponseSchema.parse(data);
-  return {
-    ...parsed,
-    results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
-  };
-}
-
-export async function getUpcomingMovies(
-  params?: PagedWithRegion & {
-    language?: string;
-    'release_date.lte'?: string;
-    'release_date.gte'?: string;
-    with_release_type?: string;
+      getConfiguration(),
+    ]);
+    const parsed = PopularResponseSchema.parse(data);
+    return {
+      ...parsed,
+      results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+    };
   },
-) {
-  const [data, { images }] = await Promise.all([
-    tmdbFetch<z.input<typeof UpcomingResponseSchema>>(
-      tmdbPath(
-        movieEndpoints.upcoming,
-        params as Record<string, string | number | boolean | null | undefined>,
-      ),
-    ),
-    getConfiguration(),
-  ]);
-  const parsed = UpcomingResponseSchema.parse(data);
-  return {
-    ...parsed,
-    results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
-  };
-}
+  ['tmdb-popular-movies'],
+  { revalidate: TTL_SHORT },
+);
 
-export async function getTrendingMovies(time: 'day' | 'week', params?: PagedListQuery) {
-  const [data, { images }] = await Promise.all([
-    tmdbFetch<z.input<typeof TrendingMoviesResponseSchema>>(
-      tmdbPath(
-        movieEndpoints.trending(time),
-        params as Record<string, string | number | boolean | null | undefined>,
+export const getTopRatedMovies = unstable_cache(
+  async (params?: PagedWithRegion) => {
+    const [data, { images }] = await Promise.all([
+      tmdbFetch<z.input<typeof TopRatedResponseSchema>>(
+        tmdbPath(
+          movieEndpoints.topRated,
+          params as Record<string, string | number | boolean | null | undefined>,
+        ),
       ),
-    ),
-    getConfiguration(),
-  ]);
-  const parsed = TrendingMoviesResponseSchema.parse(data);
-  return {
-    ...parsed,
-    results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
-  };
-}
-
-export async function getMovie(
-  id: number,
-  params?: DetailIncludeQuery & {
-    include_image_language?: string;
-    language?: string;
+      getConfiguration(),
+    ]);
+    const parsed = TopRatedResponseSchema.parse(data);
+    return {
+      ...parsed,
+      results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+    };
   },
-): Promise<MovieDetailsWithAppends> {
-  const [raw, { images }] = await Promise.all([
-    tmdbFetch<Record<string, unknown>>(tmdbPathWithInclude(movieEndpoints.details(id), params)),
-    getConfiguration(),
-  ]);
-  const row = MovieDetailsRowSchema.parse(raw);
-  const movie: MovieDetailsWithAppends = {
-    ...enrichMovieDetails(row, images.imageBaseUrl),
-  };
-  if (raw.videos != null && typeof raw.videos === 'object') {
-    const p = MovieVideosResponseSchema.safeParse(raw.videos);
-    if (p.success) movie.videos = p.data;
-  }
-  if (raw.credits != null && typeof raw.credits === 'object') {
-    const p = MovieCreditsSchema.safeParse(raw.credits);
-    if (p.success) movie.credits = p.data;
-  }
-  if (raw.similar != null && typeof raw.similar === 'object') {
-    const p = SimilarMoviesResponseSchema.safeParse(raw.similar);
-    if (p.success) {
-      movie.similar = {
-        ...p.data,
-        results: p.data.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
-      };
+  ['tmdb-top-rated-movies'],
+  { revalidate: TTL_SHORT },
+);
+
+export const getUpcomingMovies = unstable_cache(
+  async (
+    params?: PagedWithRegion & {
+      language?: string;
+      'release_date.lte'?: string;
+      'release_date.gte'?: string;
+      with_release_type?: string;
+    },
+  ) => {
+    const [data, { images }] = await Promise.all([
+      tmdbFetch<z.input<typeof UpcomingResponseSchema>>(
+        tmdbPath(
+          movieEndpoints.upcoming,
+          params as Record<string, string | number | boolean | null | undefined>,
+        ),
+      ),
+      getConfiguration(),
+    ]);
+    const parsed = UpcomingResponseSchema.parse(data);
+    return {
+      ...parsed,
+      results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+    };
+  },
+  ['tmdb-upcoming-movies'],
+  { revalidate: TTL_SHORT },
+);
+
+export const getTrendingMovies = unstable_cache(
+  async (time: 'day' | 'week', params?: PagedListQuery) => {
+    const [data, { images }] = await Promise.all([
+      tmdbFetch<z.input<typeof TrendingMoviesResponseSchema>>(
+        tmdbPath(
+          movieEndpoints.trending(time),
+          params as Record<string, string | number | boolean | null | undefined>,
+        ),
+      ),
+      getConfiguration(),
+    ]);
+    const parsed = TrendingMoviesResponseSchema.parse(data);
+    return {
+      ...parsed,
+      results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+    };
+  },
+  ['tmdb-trending-movies'],
+  { revalidate: TTL_SHORT },
+);
+
+// ---------------------------------------------------------------------------
+// Movie detail endpoints  (TTL_LONG — 24h)
+// ---------------------------------------------------------------------------
+
+export const getMovie = unstable_cache(
+  async (
+    id: number,
+    params?: DetailIncludeQuery & {
+      include_image_language?: string;
+      language?: string;
+    },
+  ): Promise<MovieDetailsWithAppends> => {
+    const [raw, { images }] = await Promise.all([
+      tmdbFetch<Record<string, unknown>>(tmdbPathWithInclude(movieEndpoints.details(id), params)),
+      getConfiguration(),
+    ]);
+    const row = MovieDetailsRowSchema.parse(raw);
+    const movie: MovieDetailsWithAppends = {
+      ...enrichMovieDetails(row, images.imageBaseUrl),
+    };
+    if (raw.videos != null && typeof raw.videos === 'object') {
+      const p = MovieVideosResponseSchema.safeParse(raw.videos);
+      if (p.success) movie.videos = p.data;
     }
-  }
-  return movie;
-}
+    if (raw.credits != null && typeof raw.credits === 'object') {
+      const p = MovieCreditsSchema.safeParse(raw.credits);
+      if (p.success) movie.credits = p.data;
+    }
+    if (raw.similar != null && typeof raw.similar === 'object') {
+      const p = SimilarMoviesResponseSchema.safeParse(raw.similar);
+      if (p.success) {
+        movie.similar = {
+          ...p.data,
+          results: p.data.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+        };
+      }
+    }
+    return movie;
+  },
+  ['tmdb-movie-details'],
+  { revalidate: TTL_LONG },
+);
+
+export const getMovieAlternativeTitles = unstable_cache(
+  async (id: number) => {
+    const data = await tmdbFetch<z.input<typeof MovieAlternativeTitlesResponseSchema>>(
+      movieEndpoints.alternativeTitles(id),
+    );
+    return MovieAlternativeTitlesResponseSchema.parse(data);
+  },
+  ['tmdb-movie-alternative-titles'],
+  { revalidate: TTL_LONG },
+);
+
+export const getMovieCredits = unstable_cache(
+  async (id: number) => {
+    const data = await tmdbFetch<z.input<typeof MovieCreditsSchema>>(movieEndpoints.credits(id));
+    return MovieCreditsSchema.parse(data);
+  },
+  ['tmdb-movie-credits'],
+  { revalidate: TTL_LONG },
+);
+
+export const getMovieExternalIds = unstable_cache(
+  async (id: number) => {
+    const data = await tmdbFetch<z.input<typeof MovieExternalIdsSchema>>(
+      movieEndpoints.externalIds(id),
+    );
+    return MovieExternalIdsSchema.parse(data);
+  },
+  ['tmdb-movie-external-ids'],
+  { revalidate: TTL_LONG },
+);
+
+export const getMovieImages = unstable_cache(
+  async (id: number, params?: { include_image_language?: string }) => {
+    const data = await tmdbFetch<z.input<typeof MovieImagesResponseSchema>>(
+      tmdbPath(
+        movieEndpoints.images(id),
+        params as Record<string, string | number | boolean | null | undefined>,
+      ),
+    );
+    return MovieImagesResponseSchema.parse(data);
+  },
+  ['tmdb-movie-images'],
+  { revalidate: TTL_LONG },
+);
+
+export const getMovieKeywords = unstable_cache(
+  async (id: number) => {
+    const data = await tmdbFetch<z.input<typeof MovieKeywordsResponseSchema>>(
+      movieEndpoints.keywords(id),
+    );
+    return MovieKeywordsResponseSchema.parse(data);
+  },
+  ['tmdb-movie-keywords'],
+  { revalidate: TTL_LONG },
+);
+
+export const getMoviePublicLists = unstable_cache(
+  async (id: number, params?: ListMovieIdQuery & { language?: string }) => {
+    const data = await tmdbFetch<z.input<typeof MoviePublicListsResponseSchema>>(
+      tmdbPath(
+        movieEndpoints.lists(id),
+        params as Record<string, string | number | boolean | null | undefined>,
+      ),
+    );
+    return MoviePublicListsResponseSchema.parse(data);
+  },
+  ['tmdb-movie-public-lists'],
+  { revalidate: TTL_LONG },
+);
+
+export const getMovieRecommendations = unstable_cache(
+  async (id: number, params?: ListMovieIdQuery) => {
+    const [data, { images }] = await Promise.all([
+      tmdbFetch<z.input<typeof MovieRecommendationsResponseSchema>>(
+        tmdbPath(
+          movieEndpoints.recommendations(id),
+          params as Record<string, string | number | boolean | null | undefined>,
+        ),
+      ),
+      getConfiguration(),
+    ]);
+    const parsed = MovieRecommendationsResponseSchema.parse(data);
+    return {
+      ...parsed,
+      results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+    };
+  },
+  ['tmdb-movie-recommendations'],
+  { revalidate: TTL_LONG },
+);
+
+export const getMovieReleaseDates = unstable_cache(
+  async (id: number) => {
+    const data = await tmdbFetch<z.input<typeof MovieReleaseDatesResponseSchema>>(
+      movieEndpoints.releaseDates(id),
+    );
+    return MovieReleaseDatesResponseSchema.parse(data);
+  },
+  ['tmdb-movie-release-dates'],
+  { revalidate: TTL_LONG },
+);
+
+export const getMovieReviews = unstable_cache(
+  async (id: number, params?: { page?: number; language?: string }) => {
+    const data = await tmdbFetch<z.input<typeof MovieReviewsResponseSchema>>(
+      tmdbPath(
+        movieEndpoints.reviews(id),
+        params as Record<string, string | number | boolean | null | undefined>,
+      ),
+    );
+    return MovieReviewsResponseSchema.parse(data);
+  },
+  ['tmdb-movie-reviews'],
+  { revalidate: TTL_LONG },
+);
+
+export const getMovieSimilar = unstable_cache(
+  async (id: number, params?: ListMovieIdQuery) => {
+    const [data, { images }] = await Promise.all([
+      tmdbFetch<z.input<typeof SimilarMoviesResponseSchema>>(
+        tmdbPath(
+          movieEndpoints.similar(id),
+          params as Record<string, string | number | boolean | null | undefined>,
+        ),
+      ),
+      getConfiguration(),
+    ]);
+    const parsed = SimilarMoviesResponseSchema.parse(data);
+    return {
+      ...parsed,
+      results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+    };
+  },
+  ['tmdb-movie-similar'],
+  { revalidate: TTL_LONG },
+);
+
+export const getMovieTranslations = unstable_cache(
+  async (id: number) => {
+    const data = await tmdbFetch<z.input<typeof MovieTranslationsResponseSchema>>(
+      movieEndpoints.translations(id),
+    );
+    return MovieTranslationsResponseSchema.parse(data);
+  },
+  ['tmdb-movie-translations'],
+  { revalidate: TTL_LONG },
+);
+
+export const getMovieVideos = unstable_cache(
+  async (id: number, params?: { language?: string }) => {
+    const data = await tmdbFetch<z.input<typeof MovieVideosResponseSchema>>(
+      tmdbPath(
+        movieEndpoints.videos(id),
+        params as Record<string, string | number | boolean | null | undefined>,
+      ),
+    );
+    return MovieVideosResponseSchema.parse(data);
+  },
+  ['tmdb-movie-videos'],
+  { revalidate: TTL_LONG },
+);
+
+export const getMovieWatchProviders = unstable_cache(
+  async (id: number) => {
+    const data = await tmdbFetch<z.input<typeof MovieWatchProvidersResponseSchema>>(
+      movieEndpoints.watchProviders(id),
+    );
+    return MovieWatchProvidersResponseSchema.parse(data);
+  },
+  ['tmdb-movie-watch-providers'],
+  { revalidate: TTL_LONG },
+);
+
+// ---------------------------------------------------------------------------
+// User-specific — never cache
+// ---------------------------------------------------------------------------
 
 export async function getMovieAccountStates(
   id: number,
@@ -258,13 +478,7 @@ export async function getMovieAccountStates(
   return MovieAccountStatesSchema.parse(data);
 }
 
-export async function getMovieAlternativeTitles(id: number) {
-  const data = await tmdbFetch<z.input<typeof MovieAlternativeTitlesResponseSchema>>(
-    movieEndpoints.alternativeTitles(id),
-  );
-  return MovieAlternativeTitlesResponseSchema.parse(data);
-}
-
+// Not cached — changes data is time-specific and always different
 export async function getMovieIdChanges(id: number, params?: MovieIdChangesPathQuery) {
   const data = await tmdbFetch<z.input<typeof MovieIdChangesResponseSchema>>(
     tmdbPath(
@@ -273,121 +487,4 @@ export async function getMovieIdChanges(id: number, params?: MovieIdChangesPathQ
     ),
   );
   return MovieIdChangesResponseSchema.parse(data);
-}
-
-export async function getMovieCredits(id: number) {
-  const data = await tmdbFetch<z.input<typeof MovieCreditsSchema>>(movieEndpoints.credits(id));
-  return MovieCreditsSchema.parse(data);
-}
-
-export async function getMovieExternalIds(id: number) {
-  const data = await tmdbFetch<z.input<typeof MovieExternalIdsSchema>>(
-    movieEndpoints.externalIds(id),
-  );
-  return MovieExternalIdsSchema.parse(data);
-}
-
-export async function getMovieImages(id: number, params?: { include_image_language?: string }) {
-  const data = await tmdbFetch<z.input<typeof MovieImagesResponseSchema>>(
-    tmdbPath(
-      movieEndpoints.images(id),
-      params as Record<string, string | number | boolean | null | undefined>,
-    ),
-  );
-  return MovieImagesResponseSchema.parse(data);
-}
-
-export async function getMovieKeywords(id: number) {
-  const data = await tmdbFetch<z.input<typeof MovieKeywordsResponseSchema>>(
-    movieEndpoints.keywords(id),
-  );
-  return MovieKeywordsResponseSchema.parse(data);
-}
-
-export async function getMoviePublicLists(
-  id: number,
-  params?: ListMovieIdQuery & { language?: string },
-) {
-  const data = await tmdbFetch<z.input<typeof MoviePublicListsResponseSchema>>(
-    tmdbPath(
-      movieEndpoints.lists(id),
-      params as Record<string, string | number | boolean | null | undefined>,
-    ),
-  );
-  return MoviePublicListsResponseSchema.parse(data);
-}
-
-export async function getMovieRecommendations(id: number, params?: ListMovieIdQuery) {
-  const [data, { images }] = await Promise.all([
-    tmdbFetch<z.input<typeof MovieRecommendationsResponseSchema>>(
-      tmdbPath(
-        movieEndpoints.recommendations(id),
-        params as Record<string, string | number | boolean | null | undefined>,
-      ),
-    ),
-    getConfiguration(),
-  ]);
-  const parsed = MovieRecommendationsResponseSchema.parse(data);
-  return {
-    ...parsed,
-    results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
-  };
-}
-
-export async function getMovieReleaseDates(id: number) {
-  const data = await tmdbFetch<z.input<typeof MovieReleaseDatesResponseSchema>>(
-    movieEndpoints.releaseDates(id),
-  );
-  return MovieReleaseDatesResponseSchema.parse(data);
-}
-
-export async function getMovieReviews(id: number, params?: { page?: number; language?: string }) {
-  const data = await tmdbFetch<z.input<typeof MovieReviewsResponseSchema>>(
-    tmdbPath(
-      movieEndpoints.reviews(id),
-      params as Record<string, string | number | boolean | null | undefined>,
-    ),
-  );
-  return MovieReviewsResponseSchema.parse(data);
-}
-
-export async function getMovieSimilar(id: number, params?: ListMovieIdQuery) {
-  const [data, { images }] = await Promise.all([
-    tmdbFetch<z.input<typeof SimilarMoviesResponseSchema>>(
-      tmdbPath(
-        movieEndpoints.similar(id),
-        params as Record<string, string | number | boolean | null | undefined>,
-      ),
-    ),
-    getConfiguration(),
-  ]);
-  const parsed = SimilarMoviesResponseSchema.parse(data);
-  return {
-    ...parsed,
-    results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
-  };
-}
-
-export async function getMovieTranslations(id: number) {
-  const data = await tmdbFetch<z.input<typeof MovieTranslationsResponseSchema>>(
-    movieEndpoints.translations(id),
-  );
-  return MovieTranslationsResponseSchema.parse(data);
-}
-
-export async function getMovieVideos(id: number, params?: { language?: string }) {
-  const data = await tmdbFetch<z.input<typeof MovieVideosResponseSchema>>(
-    tmdbPath(
-      movieEndpoints.videos(id),
-      params as Record<string, string | number | boolean | null | undefined>,
-    ),
-  );
-  return MovieVideosResponseSchema.parse(data);
-}
-
-export async function getMovieWatchProviders(id: number) {
-  const data = await tmdbFetch<z.input<typeof MovieWatchProvidersResponseSchema>>(
-    movieEndpoints.watchProviders(id),
-  );
-  return MovieWatchProvidersResponseSchema.parse(data);
 }

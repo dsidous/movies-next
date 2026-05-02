@@ -1,3 +1,5 @@
+import { unstable_cache } from 'next/cache';
+
 import { z } from 'zod';
 
 import { tmdbFetch } from '../client';
@@ -9,6 +11,9 @@ import { discoverEndpoints } from './endpoints';
 import { DiscoverMovieResponseSchema, DiscoverTvResponseSchema } from './schema';
 
 type QueryRecord = Record<string, string | number | boolean | null | undefined>;
+
+// Discover results change as new content is added — cache for 1h
+const TTL = 60 * 60;
 
 function enrichMovieListItem(item: MovieListItemRow, imageBaseUrl: string): MovieListItem {
   return {
@@ -36,32 +41,40 @@ function enrichTvListItem(item: TvListItemRow, imageBaseUrl: string): TvListItem
  * Discover movies; pass TMDB filter/sort options as query (e.g. `sort_by`, `with_genres`, `page`, `region`).
  * @see https://developer.themoviedb.org/reference/discover-movie
  */
-export async function discoverMovies(query?: QueryRecord) {
-  const [data, { images }] = await Promise.all([
-    tmdbFetch<z.input<typeof DiscoverMovieResponseSchema>>(
-      tmdbPath(discoverEndpoints.movie, query),
-    ),
-    getConfiguration(),
-  ]);
-  const parsed = DiscoverMovieResponseSchema.parse(data);
-  return {
-    ...parsed,
-    results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
-  };
-}
+export const discoverMovies = unstable_cache(
+  async (query?: QueryRecord) => {
+    const [data, { images }] = await Promise.all([
+      tmdbFetch<z.input<typeof DiscoverMovieResponseSchema>>(
+        tmdbPath(discoverEndpoints.movie, query),
+      ),
+      getConfiguration(),
+    ]);
+    const parsed = DiscoverMovieResponseSchema.parse(data);
+    return {
+      ...parsed,
+      results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+    };
+  },
+  ['tmdb-discover-movies'],
+  { revalidate: TTL },
+);
 
 /**
  * Discover TV; pass TMDB filter/sort options as query (e.g. `sort_by`, `with_genres`, `page`, `timezone`).
  * @see https://developer.themoviedb.org/reference/discover-tv
  */
-export async function discoverTv(query?: QueryRecord) {
-  const [data, { images }] = await Promise.all([
-    tmdbFetch<z.input<typeof DiscoverTvResponseSchema>>(tmdbPath(discoverEndpoints.tv, query)),
-    getConfiguration(),
-  ]);
-  const parsed = DiscoverTvResponseSchema.parse(data);
-  return {
-    ...parsed,
-    results: parsed.results.map((row) => enrichTvListItem(row, images.imageBaseUrl)),
-  };
-}
+export const discoverTv = unstable_cache(
+  async (query?: QueryRecord) => {
+    const [data, { images }] = await Promise.all([
+      tmdbFetch<z.input<typeof DiscoverTvResponseSchema>>(tmdbPath(discoverEndpoints.tv, query)),
+      getConfiguration(),
+    ]);
+    const parsed = DiscoverTvResponseSchema.parse(data);
+    return {
+      ...parsed,
+      results: parsed.results.map((row) => enrichTvListItem(row, images.imageBaseUrl)),
+    };
+  },
+  ['tmdb-discover-tv'],
+  { revalidate: TTL },
+);
