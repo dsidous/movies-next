@@ -70,9 +70,19 @@ const TTL_LONG = 60 * 60 * 24; // 24h — detail/static data
 // Helpers
 // ---------------------------------------------------------------------------
 
-function enrichTvListItem(item: TvListItemRow, imageBaseUrl: string): TvListItem {
+/** Map a parsed TV list row to the UI shape (no raw `*_path` blobs). */
+export function toTvListItem(item: TvListItemRow, imageBaseUrl: string): TvListItem {
   return {
-    ...item,
+    id: item.id,
+    name: item.name,
+    overview: item.overview,
+    genre_ids: item.genre_ids,
+    origin_country: item.origin_country,
+    original_language: item.original_language,
+    original_name: item.original_name,
+    popularity: item.popularity,
+    vote_average: item.vote_average,
+    vote_count: item.vote_count,
     posterUrl: formatImageUrlWithBase(item.poster_path, imageBaseUrl, 'w500'),
     backdropUrl: item.backdrop_path
       ? formatImageUrlWithBase(item.backdrop_path, imageBaseUrl, 'original')
@@ -81,8 +91,37 @@ function enrichTvListItem(item: TvListItemRow, imageBaseUrl: string): TvListItem
   };
 }
 
+function mapSeasonsForUi(seasons: unknown[] | undefined) {
+  if (!seasons?.length) return [];
+  const out: {
+    season_number: number;
+    name: string;
+    episode_count: number;
+    air_date: string | null;
+  }[] = [];
+  for (const s of seasons) {
+    if (s == null || typeof s !== 'object') continue;
+    const o = s as Record<string, unknown>;
+    const sn = o.season_number;
+    if (typeof sn !== 'number' || !Number.isFinite(sn)) continue;
+    const name = typeof o.name === 'string' ? o.name : `Season ${sn}`;
+    const ec = o.episode_count;
+    const episode_count = typeof ec === 'number' && Number.isFinite(ec) ? ec : 0;
+    const ad = o.air_date;
+    const air_date = typeof ad === 'string' && ad.length > 0 ? ad : null;
+    out.push({ season_number: sn, name, episode_count, air_date });
+  }
+  return out.sort((a, b) => a.season_number - b.season_number);
+}
+
+function mapLastEpisodeToAirUi(raw: unknown | null | undefined): { season_number: number } | null {
+  if (raw == null || typeof raw !== 'object') return null;
+  const sn = (raw as Record<string, unknown>).season_number;
+  return typeof sn === 'number' && sn >= 0 ? { season_number: sn } : null;
+}
+
 function mapDisplayNetworks(
-  networks: TvDetailsRow['networks'],
+  networks: unknown[] | undefined,
   imageBaseUrl: string,
 ): TvNetworkDisplay[] {
   if (!networks?.length) return [];
@@ -103,15 +142,30 @@ function mapDisplayNetworks(
   return out;
 }
 
-function enrichTvDetails(row: TvDetailsRow, imageBaseUrl: string): TvDetails {
+function toTvDetails(row: TvDetailsRow, imageBaseUrl: string): TvDetails {
   return {
-    ...row,
+    id: row.id,
+    name: row.name,
+    original_name: row.original_name,
+    overview: row.overview,
+    tagline: row.tagline,
+    vote_average: row.vote_average,
+    vote_count: row.vote_count,
+    genres: row.genres,
+    first_air_date: row.first_air_date,
+    last_air_date: row.last_air_date,
+    episode_run_time: row.episode_run_time,
+    number_of_seasons: row.number_of_seasons,
+    number_of_episodes: row.number_of_episodes,
+    seasons: mapSeasonsForUi(row.seasons),
+    last_episode_to_air: mapLastEpisodeToAirUi(row.last_episode_to_air),
     posterUrl: formatImageUrlWithBase(row.poster_path, imageBaseUrl, 'w500'),
     backdropUrl: row.backdrop_path
       ? formatImageUrlWithBase(row.backdrop_path, imageBaseUrl, 'original')
       : null,
     firstAirYear: row.first_air_date ? row.first_air_date.split('-')[0]! : '',
     displayNetworks: mapDisplayNetworks(row.networks, imageBaseUrl),
+    status: row.status,
   };
 }
 
@@ -153,7 +207,7 @@ export async function getLatestTv() {
     tmdbFetch<z.input<typeof TvDetailsRowSchema>>(tvEndpoints.latest),
     getConfiguration(),
   ]);
-  return enrichTvDetails(TvDetailsRowSchema.parse(data), images.imageBaseUrl);
+  return toTvDetails(TvDetailsRowSchema.parse(data), images.imageBaseUrl);
 }
 
 // ---------------------------------------------------------------------------
@@ -171,7 +225,7 @@ export const getAiringTodayTv = unstable_cache(
     const parsed = TvAiringTodayResponseSchema.parse(data);
     return {
       ...parsed,
-      results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)),
+      results: parsed.results.map((r) => toTvListItem(r, images.imageBaseUrl)),
     };
   },
   ['tmdb-tv-airing-today'],
@@ -189,7 +243,7 @@ export const getOnTheAirTv = unstable_cache(
     const parsed = TvOnTheAirResponseSchema.parse(data);
     return {
       ...parsed,
-      results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)),
+      results: parsed.results.map((r) => toTvListItem(r, images.imageBaseUrl)),
     };
   },
   ['tmdb-tv-on-the-air'],
@@ -207,7 +261,7 @@ export const getPopularTv = unstable_cache(
     const parsed = TvPopularResponseSchema.parse(data);
     return {
       ...parsed,
-      results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)),
+      results: parsed.results.map((r) => toTvListItem(r, images.imageBaseUrl)),
     };
   },
   ['tmdb-tv-popular'],
@@ -225,7 +279,7 @@ export const getTopRatedTv = unstable_cache(
     const parsed = TvTopRatedResponseSchema.parse(data);
     return {
       ...parsed,
-      results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)),
+      results: parsed.results.map((r) => toTvListItem(r, images.imageBaseUrl)),
     };
   },
   ['tmdb-tv-top-rated'],
@@ -243,7 +297,7 @@ export const getTrendingTv = unstable_cache(
     const parsed = TrendingTvResponseSchema.parse(data);
     return {
       ...parsed,
-      results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)),
+      results: parsed.results.map((r) => toTvListItem(r, images.imageBaseUrl)),
     };
   },
   ['tmdb-tv-trending'],
@@ -275,22 +329,41 @@ export const getTv = unstable_cache(
     const row = TvDetailsRowSchema.parse(raw);
     const base = images.imageBaseUrl;
     const show: TvDetailsWithAppends = {
-      ...enrichTvDetails(row, base),
+      ...toTvDetails(row, base),
     };
     if (raw.videos != null && typeof raw.videos === 'object') {
       const p = TvVideosResponseSchema.safeParse(raw.videos);
-      if (p.success) show.videos = p.data;
+      if (p.success) {
+        show.videos = {
+          results: p.data.results.map((v) => ({
+            site: v.site ?? null,
+            key: v.key ?? null,
+            name: v.name ?? null,
+            type: v.type ?? null,
+          })),
+        };
+      }
     }
     if (raw.credits != null && typeof raw.credits === 'object') {
       const p = TvCreditsSchema.safeParse(raw.credits);
-      if (p.success) show.credits = p.data;
+      if (p.success) {
+        show.credits = {
+          cast: p.data.cast.map((c) => ({
+            id: c.id,
+            credit_id: c.credit_id,
+            name: c.name,
+            character: c.character,
+            profile_path: c.profile_path ?? null,
+          })),
+        };
+      }
     }
     if (raw.similar != null && typeof raw.similar === 'object') {
       const p = TvSimilarResponseSchema.safeParse(raw.similar);
       if (p.success) {
         show.similar = {
           ...p.data,
-          results: p.data.results.map((r) => enrichTvListItem(r, base)),
+          results: p.data.results.map((r) => toTvListItem(r, base)),
         };
       }
     }
@@ -408,7 +481,7 @@ export const getTvRecommendations = unstable_cache(
     const parsed = TvRecommendationsResponseSchema.parse(data);
     return {
       ...parsed,
-      results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)),
+      results: parsed.results.map((r) => toTvListItem(r, images.imageBaseUrl)),
     };
   },
   ['tmdb-tv-recommendations'],
@@ -448,7 +521,7 @@ export const getTvSimilar = unstable_cache(
     const parsed = TvSimilarResponseSchema.parse(data);
     return {
       ...parsed,
-      results: parsed.results.map((r) => enrichTvListItem(r, images.imageBaseUrl)),
+      results: parsed.results.map((r) => toTvListItem(r, images.imageBaseUrl)),
     };
   },
   ['tmdb-tv-similar'],

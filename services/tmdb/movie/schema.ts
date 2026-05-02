@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { GenreSchema } from '../genre/schema';
+import { type Genre, GenreSchema } from '../genre/schema';
 
 export const MovieListItemRowSchema = z.looseObject({
   adult: z.boolean(),
@@ -20,10 +20,19 @@ export const MovieListItemRowSchema = z.looseObject({
   media_type: z.string().optional(),
 });
 
-/** Raw TMDB list row; `get*Movies` APIs return this plus `posterUrl` / `backdropUrl` / `releaseYear` (see `MovieListItem`). */
+/** Raw TMDB list row from discover / lists API (parsed only; see {@link MovieListItem}). */
 export type MovieListItemRow = z.infer<typeof MovieListItemRowSchema>;
 
-export type MovieListItem = MovieListItemRow & {
+/** List card / feed / hero item — fields returned from hot-path movie list transforms only. */
+export type MovieListItem = {
+  id: number;
+  title: string;
+  overview: string;
+  genre_ids: number[];
+  original_language: string;
+  popularity: number;
+  vote_average: number;
+  vote_count: number;
   posterUrl: string;
   backdropUrl: string | null;
   releaseYear: string;
@@ -140,10 +149,37 @@ export const MovieDetailsRowSchema = z.looseObject({
 
 export type MovieDetailsRow = z.infer<typeof MovieDetailsRowSchema>;
 
-export type MovieDetails = MovieDetailsRow & {
+/** Movie detail for app UI — hot paths return only this shape (not full TMDB row). */
+export type MovieDetails = {
+  id: number;
+  title: string;
+  overview: string | null;
+  release_date: string | null;
+  runtime: number | null | undefined;
+  vote_average: number;
+  vote_count: number;
+  genres: Genre[];
+  tagline: string | null;
   posterUrl: string;
   backdropUrl: string | null;
   releaseYear: string;
+};
+
+/** YouTube/other video row on detail pages (append). */
+export type MovieVideoResultForUi = {
+  site: string | null;
+  key: string | null;
+  name: string | null;
+  type: string | null;
+};
+
+/** Cast member on appended `credits` (feed into {@link enrichCastForDisplay}). */
+export type CreditsCastForDisplay = {
+  id: number;
+  credit_id?: string;
+  name?: string;
+  character?: string;
+  profile_path?: string | null;
 };
 
 /** Alias for `MovieDetailsRowSchema`. */
@@ -354,8 +390,8 @@ export type SimilarMoviesEnriched = {
 };
 
 export type MovieDetailsWithAppends = MovieDetails & {
-  videos?: MovieVideosResponse;
-  credits?: MovieCredits;
+  videos?: { results: MovieVideoResultForUi[] };
+  credits?: { cast: CreditsCastForDisplay[] };
   similar?: SimilarMoviesEnriched;
 };
 

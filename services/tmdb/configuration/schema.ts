@@ -27,6 +27,13 @@ export const ConfigurationSchema = z.object({
 
 export type Configuration = z.infer<typeof ConfigurationSchema>;
 
+/** What {@link getConfiguration} returns to the app (images only). */
+export type TmdbAppConfiguration = {
+  images: {
+    imageBaseUrl: string;
+  };
+};
+
 export const CountrySchema = z.object({
   iso_3166_1: z.string(),
   english_name: z.string(),

@@ -12,6 +12,8 @@ import {
 } from '../utils';
 import { personEndpoints } from './endpoints';
 import type {
+  PersonCombinedCastEntry,
+  PersonCombinedCredits,
   PersonCreditCardItem,
   PersonDetails,
   PersonDetailsRow,
@@ -41,30 +43,58 @@ const TTL_LONG = 60 * 60 * 24; // 24h — person details/credits/images are stab
 // Helpers
 // ---------------------------------------------------------------------------
 
-function enrichPersonProfile(
-  row: { profile_path?: string | null },
-  imageBaseUrl: string,
-): { profileUrl: string } {
-  return {
-    profileUrl: formatImageUrlWithBase(row.profile_path ?? null, imageBaseUrl, 'w500'),
-  };
-}
-
 function enrichPersonListItem(
   row: PersonPopularListItemRow,
   imageBaseUrl: string,
 ): PersonPopularListItem {
   return {
-    ...row,
-    ...enrichPersonProfile(row, imageBaseUrl),
+    id: row.id,
+    name: row.name,
+    profileUrl: formatImageUrlWithBase(row.profile_path ?? null, imageBaseUrl, 'w500'),
+    known_for_department: row.known_for_department,
   };
 }
 
 function enrichPersonDetails(row: PersonDetailsRow, imageBaseUrl: string): PersonDetails {
   return {
-    ...row,
-    ...enrichPersonProfile(row, imageBaseUrl),
+    id: row.id,
+    name: row.name,
+    known_for_department: row.known_for_department,
+    biography: row.biography,
+    birthday: row.birthday,
+    deathday: row.deathday,
+    place_of_birth: row.place_of_birth,
+    profileUrl: formatImageUrlWithBase(row.profile_path ?? null, imageBaseUrl, 'w500'),
   };
+}
+
+function slimPersonCombinedCreditsCast(cast: unknown[]): PersonCombinedCastEntry[] {
+  const out: PersonCombinedCastEntry[] = [];
+  for (const raw of cast) {
+    if (!raw || typeof raw !== 'object') continue;
+    const o = raw as Record<string, unknown>;
+    const id = o.id;
+    const media = o.media_type;
+    if (typeof id !== 'number' || (media !== 'movie' && media !== 'tv')) continue;
+    out.push({
+      id,
+      media_type: media,
+      title: typeof o.title === 'string' ? o.title : undefined,
+      name: typeof o.name === 'string' ? o.name : undefined,
+      release_date: typeof o.release_date === 'string' ? o.release_date : undefined,
+      first_air_date: typeof o.first_air_date === 'string' ? o.first_air_date : undefined,
+      poster_path:
+        typeof o.poster_path === 'string'
+          ? o.poster_path
+          : o.poster_path === null
+            ? null
+            : undefined,
+      character: typeof o.character === 'string' ? o.character : undefined,
+      vote_average: typeof o.vote_average === 'number' ? o.vote_average : undefined,
+      vote_count: typeof o.vote_count === 'number' ? o.vote_count : undefined,
+    });
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -131,11 +161,15 @@ export const getPerson = unstable_cache(
 );
 
 export const getPersonCombinedCredits = unstable_cache(
-  async (personId: number) => {
+  async (personId: number): Promise<PersonCombinedCredits> => {
     const data = await tmdbFetch<z.input<typeof PersonCreditsResponseSchema>>(
       personEndpoints.combinedCredits(personId),
     );
-    return PersonCreditsResponseSchema.parse(data);
+    const parsed = PersonCreditsResponseSchema.parse(data);
+    return {
+      id: parsed.id,
+      cast: slimPersonCombinedCreditsCast(parsed.cast),
+    };
   },
   ['tmdb-person-combined-credits'],
   { revalidate: TTL_LONG },
@@ -224,17 +258,13 @@ export async function getPersonIdChanges(personId: number, params?: IdChangesPat
 
 const CREDIT_DISPLAY_LIMIT = 60;
 
-type RawCombinedCast = Record<string, unknown>;
-
-function creditTitle(c: RawCombinedCast) {
-  const t = c.title;
-  const n = c.name;
-  if (typeof t === 'string' && t.length) return t;
-  if (typeof n === 'string' && n.length) return n;
+function creditTitleEntry(c: PersonCombinedCastEntry) {
+  if (c.title?.trim()) return c.title;
+  if (c.name?.trim()) return c.name;
   return 'Untitled';
 }
 
-function creditYear(c: RawCombinedCast) {
+function creditYearEntry(c: PersonCombinedCastEntry) {
   const rel = c.release_date;
   const first = c.first_air_date;
   const raw =
@@ -244,7 +274,7 @@ function creditYear(c: RawCombinedCast) {
 }
 
 export function enrichPersonCombinedCastForDisplay(
-  cast: unknown[] | undefined,
+  cast: PersonCombinedCastEntry[] | undefined,
   imageBaseUrl: string,
   options?: { limit?: number },
 ): PersonCreditCardItem[] {
@@ -253,35 +283,25 @@ export function enrichPersonCombinedCastForDisplay(
   const seen = new Set<string>();
   const rows: PersonCreditCardItem[] = [];
 
-  for (const raw of cast) {
+  for (const c of cast) {
     if (rows.length >= limit) break;
-    if (!raw || typeof raw !== 'object') continue;
-    const c = raw as RawCombinedCast;
-    const id = c.id;
-    const media = c.media_type;
-    if (typeof id !== 'number' || (media !== 'movie' && media !== 'tv')) continue;
-    const key = `${String(media)}-${id}`;
+    const key = `${String(c.media_type)}-${c.id}`;
     if (seen.has(key)) continue;
     seen.add(key);
 
-    const va = c.vote_average;
-    const vc = c.vote_count;
-    const ch = c.character;
-    const poster = c.poster_path;
-
     rows.push({
-      id,
-      type: media,
-      title: creditTitle(c),
-      year: creditYear(c),
+      id: c.id,
+      type: c.media_type,
+      title: creditTitleEntry(c),
+      year: creditYearEntry(c),
       posterUrl: formatImageUrlWithBase(
-        typeof poster === 'string' ? poster : null,
+        typeof c.poster_path === 'string' ? c.poster_path : null,
         imageBaseUrl,
         'w500',
       ),
-      character: typeof ch === 'string' ? ch : '',
-      vote_average: typeof va === 'number' ? va : 0,
-      vote_count: typeof vc === 'number' ? vc : 0,
+      character: typeof c.character === 'string' ? c.character : '',
+      vote_average: typeof c.vote_average === 'number' ? c.vote_average : 0,
+      vote_count: typeof c.vote_count === 'number' ? c.vote_count : 0,
     });
   }
 

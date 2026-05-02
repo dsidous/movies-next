@@ -16,22 +16,30 @@ export type SearchMultiQuery = { query: string } & QueryRecord;
 // identical in-flight requests within the same render.
 
 function enrichSearchMultiItem(row: SearchMultiResultRow, imageBaseUrl: string): SearchMultiResult {
-  if (row.media_type === 'person') {
-    const { profile_path } = row as SearchMultiResultRow & { profile_path?: string | null };
+  const id = row.id;
+  const media_type = row.media_type;
+
+  if (media_type === 'person') {
+    const r = row as SearchMultiResultRow & { profile_path?: string | null; name?: string };
     return {
-      ...row,
-      profileUrl: formatImageUrlWithBase(profile_path ?? null, imageBaseUrl, 'w500'),
+      id,
+      media_type,
+      name: typeof r.name === 'string' ? r.name : undefined,
+      profileUrl: formatImageUrlWithBase(r.profile_path ?? null, imageBaseUrl, 'w500'),
     };
   }
 
-  if (row.media_type === 'tv') {
+  if (media_type === 'tv') {
     const r = row as SearchMultiResultRow & {
       poster_path?: string | null;
       backdrop_path?: string | null;
       first_air_date?: string;
+      name?: string;
     };
     return {
-      ...row,
+      id,
+      media_type,
+      name: typeof r.name === 'string' ? r.name : undefined,
       posterUrl: formatImageUrlWithBase(r.poster_path ?? null, imageBaseUrl, 'w500'),
       backdropUrl: r.backdrop_path
         ? formatImageUrlWithBase(r.backdrop_path, imageBaseUrl, 'original')
@@ -44,9 +52,12 @@ function enrichSearchMultiItem(row: SearchMultiResultRow, imageBaseUrl: string):
     poster_path?: string | null;
     backdrop_path?: string | null;
     release_date?: string;
+    title?: string;
   };
   return {
-    ...row,
+    id,
+    media_type,
+    title: typeof r.title === 'string' ? r.title : undefined,
     posterUrl: formatImageUrlWithBase(r.poster_path ?? null, imageBaseUrl, 'w500'),
     backdropUrl: r.backdrop_path
       ? formatImageUrlWithBase(r.backdrop_path, imageBaseUrl, 'original')

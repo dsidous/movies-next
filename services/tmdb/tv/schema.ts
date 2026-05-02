@@ -1,9 +1,12 @@
 import { z } from 'zod';
 
+import type { Genre } from '../genre/schema';
 import { GenreSchema } from '../genre/schema';
 import {
+  type CreditsCastForDisplay,
   CastMemberSchema,
   CrewMemberSchema,
+  type MovieVideoResultForUi,
   MovieAccountStatesSchema,
   MovieAlternativeTitlesResponseSchema,
   MovieIdChangesResponseSchema,
@@ -37,7 +40,19 @@ export const TvListItemRowSchema = z.looseObject({
 });
 
 export type TvListItemRow = z.infer<typeof TvListItemRowSchema>;
-export type TvListItem = TvListItemRow & {
+
+/** List card / feed / hero item — fields from hot-path TV list transforms only. */
+export type TvListItem = {
+  id: number;
+  name: string;
+  overview: string;
+  genre_ids: number[];
+  origin_country: string[];
+  original_language: string;
+  original_name: string;
+  popularity: number;
+  vote_average: number;
+  vote_count: number;
   posterUrl: string;
   backdropUrl: string | null;
   firstAirYear: string;
@@ -124,6 +139,18 @@ export const TvDetailsRowSchema = z.looseObject({
 });
 
 export type TvDetailsRow = z.infer<typeof TvDetailsRowSchema>;
+
+export type TvSeasonListItemUi = {
+  season_number: number;
+  name: string;
+  episode_count: number;
+  air_date: string | null;
+};
+
+export type TvLastEpisodeToAirUi = {
+  season_number: number;
+};
+
 export type TvNetworkDisplay = {
   id: number;
   name: string;
@@ -131,18 +158,35 @@ export type TvNetworkDisplay = {
   logoUrl: string | null;
 };
 
-export type TvDetails = TvDetailsRow & {
+/** TV detail for app UI — hot paths return only this shape (not full TMDB row). */
+export type TvDetails = {
+  id: number;
+  name: string;
+  original_name: string;
+  overview: string;
+  tagline?: string;
+  vote_average: number;
+  vote_count: number;
+  genres: Genre[];
+  /** ISO date string — may be empty from TMDB. */
+  first_air_date: string;
+  last_air_date?: string | null;
+  episode_run_time?: number[];
+  number_of_seasons?: number;
+  number_of_episodes?: number;
+  seasons: TvSeasonListItemUi[];
+  last_episode_to_air: TvLastEpisodeToAirUi | null;
   posterUrl: string;
   backdropUrl: string | null;
   firstAirYear: string;
-  /** TMDB `networks` with resolved logo URLs. */
   displayNetworks: TvNetworkDisplay[];
+  status?: string;
 };
 
 /** TV detail with `append_to_response` (see {@link getTv} merge). */
 export type TvDetailsWithAppends = TvDetails & {
-  videos?: z.infer<typeof MovieVideosResponseSchema>;
-  credits?: z.infer<typeof TvCreditsSchema>;
+  videos?: { results: MovieVideoResultForUi[] };
+  credits?: { cast: CreditsCastForDisplay[] };
   similar?: {
     page: number;
     results: TvListItem[];

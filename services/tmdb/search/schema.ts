@@ -6,7 +6,12 @@ export const SearchMultiResultRowSchema = z.looseObject({
 });
 export type SearchMultiResultRow = z.infer<typeof SearchMultiResultRowSchema>;
 
-export type SearchMultiResult = SearchMultiResultRow & {
+/** Search row after hot-path enrich — no full TMDB blobs. */
+export type SearchMultiResult = {
+  id: number;
+  media_type: string;
+  title?: string;
+  name?: string;
   posterUrl?: string;
   backdropUrl?: string | null;
   profileUrl?: string;

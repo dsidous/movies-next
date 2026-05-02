@@ -11,6 +11,7 @@ import {
   LanguageSchema,
   PrimaryTranslationsSchema,
   TimezoneGroupSchema,
+  type TmdbAppConfiguration,
 } from './schema';
 
 // Configuration data is essentially static — cache for 24h
@@ -18,11 +19,16 @@ const TTL = 60 * 60 * 24;
 
 // This is called by nearly every other api.ts, so caching it is high-impact.
 export const getConfiguration = unstable_cache(
-  async () => {
+  async (): Promise<TmdbAppConfiguration> => {
     const data = await tmdbFetch<z.input<typeof ConfigurationSchema>>(
       configurationEndpoints.details,
     );
-    return ConfigurationSchema.parse(data);
+    const parsed = ConfigurationSchema.parse(data);
+    return {
+      images: {
+        imageBaseUrl: parsed.images.imageBaseUrl,
+      },
+    };
   },
   ['tmdb-configuration'],
   { revalidate: TTL },

@@ -13,7 +13,7 @@ import {
 import { movieEndpoints } from './endpoints';
 import type {
   CastDisplayItem,
-  MovieCredits,
+  CreditsCastForDisplay,
   MovieDetails,
   MovieDetailsRow,
   MovieDetailsWithAppends,
@@ -58,9 +58,17 @@ const TTL_LONG = 60 * 60 * 24; // 24h — detail/static data
 // Helpers
 // ---------------------------------------------------------------------------
 
-function enrichMovieListItem(item: MovieListItemRow, imageBaseUrl: string): MovieListItem {
+/** Map a parsed list row to the UI shape (no raw `*_path` blobs). */
+export function toMovieListItem(item: MovieListItemRow, imageBaseUrl: string): MovieListItem {
   return {
-    ...item,
+    id: item.id,
+    title: item.title,
+    overview: item.overview,
+    genre_ids: item.genre_ids,
+    original_language: item.original_language,
+    popularity: item.popularity,
+    vote_average: item.vote_average,
+    vote_count: item.vote_count,
     posterUrl: formatImageUrlWithBase(item.poster_path, imageBaseUrl, 'w500'),
     backdropUrl: item.backdrop_path
       ? formatImageUrlWithBase(item.backdrop_path, imageBaseUrl, 'original')
@@ -69,9 +77,17 @@ function enrichMovieListItem(item: MovieListItemRow, imageBaseUrl: string): Movi
   };
 }
 
-function enrichMovieDetails(row: MovieDetailsRow, imageBaseUrl: string): MovieDetails {
+function toMovieDetails(row: MovieDetailsRow, imageBaseUrl: string): MovieDetails {
   return {
-    ...row,
+    id: row.id,
+    title: row.title,
+    overview: row.overview,
+    release_date: row.release_date,
+    runtime: row.runtime,
+    vote_average: row.vote_average,
+    vote_count: row.vote_count,
+    genres: row.genres,
+    tagline: row.tagline,
     posterUrl: formatImageUrlWithBase(row.poster_path, imageBaseUrl, 'w500'),
     backdropUrl: row.backdrop_path
       ? formatImageUrlWithBase(row.backdrop_path, imageBaseUrl, 'original')
@@ -83,7 +99,7 @@ function enrichMovieDetails(row: MovieDetailsRow, imageBaseUrl: string): MovieDe
 const DEFAULT_CAST_DISPLAY_LIMIT = 18;
 
 export function enrichCastForDisplay(
-  cast: MovieCredits['cast'] | undefined,
+  cast: CreditsCastForDisplay[] | undefined,
   imageBaseUrl: string,
   options?: { limit?: number },
 ): CastDisplayItem[] {
@@ -120,7 +136,7 @@ export async function getLatestMovie() {
     tmdbFetch<z.input<typeof MovieDetailsRowSchema>>(movieEndpoints.latest),
     getConfiguration(),
   ]);
-  return enrichMovieDetails(MovieDetailsRowSchema.parse(data), images.imageBaseUrl);
+  return toMovieDetails(MovieDetailsRowSchema.parse(data), images.imageBaseUrl);
 }
 
 // ---------------------------------------------------------------------------
@@ -147,7 +163,7 @@ export const getNowPlayingMovies = unstable_cache(
     const parsed = NowPlayingResponseSchema.parse(data);
     return {
       ...parsed,
-      results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+      results: parsed.results.map((row) => toMovieListItem(row, images.imageBaseUrl)),
     };
   },
   ['tmdb-now-playing'],
@@ -168,7 +184,7 @@ export const getPopularMovies = unstable_cache(
     const parsed = PopularResponseSchema.parse(data);
     return {
       ...parsed,
-      results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+      results: parsed.results.map((row) => toMovieListItem(row, images.imageBaseUrl)),
     };
   },
   ['tmdb-popular-movies'],
@@ -189,7 +205,7 @@ export const getTopRatedMovies = unstable_cache(
     const parsed = TopRatedResponseSchema.parse(data);
     return {
       ...parsed,
-      results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+      results: parsed.results.map((row) => toMovieListItem(row, images.imageBaseUrl)),
     };
   },
   ['tmdb-top-rated-movies'],
@@ -217,7 +233,7 @@ export const getUpcomingMovies = unstable_cache(
     const parsed = UpcomingResponseSchema.parse(data);
     return {
       ...parsed,
-      results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+      results: parsed.results.map((row) => toMovieListItem(row, images.imageBaseUrl)),
     };
   },
   ['tmdb-upcoming-movies'],
@@ -238,7 +254,7 @@ export const getTrendingMovies = unstable_cache(
     const parsed = TrendingMoviesResponseSchema.parse(data);
     return {
       ...parsed,
-      results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+      results: parsed.results.map((row) => toMovieListItem(row, images.imageBaseUrl)),
     };
   },
   ['tmdb-trending-movies'],
@@ -263,22 +279,41 @@ export const getMovie = unstable_cache(
     ]);
     const row = MovieDetailsRowSchema.parse(raw);
     const movie: MovieDetailsWithAppends = {
-      ...enrichMovieDetails(row, images.imageBaseUrl),
+      ...toMovieDetails(row, images.imageBaseUrl),
     };
     if (raw.videos != null && typeof raw.videos === 'object') {
       const p = MovieVideosResponseSchema.safeParse(raw.videos);
-      if (p.success) movie.videos = p.data;
+      if (p.success) {
+        movie.videos = {
+          results: p.data.results.map((v) => ({
+            site: v.site ?? null,
+            key: v.key ?? null,
+            name: v.name ?? null,
+            type: v.type ?? null,
+          })),
+        };
+      }
     }
     if (raw.credits != null && typeof raw.credits === 'object') {
       const p = MovieCreditsSchema.safeParse(raw.credits);
-      if (p.success) movie.credits = p.data;
+      if (p.success) {
+        movie.credits = {
+          cast: p.data.cast.map((c) => ({
+            id: c.id,
+            credit_id: c.credit_id,
+            name: c.name,
+            character: c.character,
+            profile_path: c.profile_path ?? null,
+          })),
+        };
+      }
     }
     if (raw.similar != null && typeof raw.similar === 'object') {
       const p = SimilarMoviesResponseSchema.safeParse(raw.similar);
       if (p.success) {
         movie.similar = {
           ...p.data,
-          results: p.data.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+          results: p.data.results.map((row) => toMovieListItem(row, images.imageBaseUrl)),
         };
       }
     }
@@ -372,7 +407,7 @@ export const getMovieRecommendations = unstable_cache(
     const parsed = MovieRecommendationsResponseSchema.parse(data);
     return {
       ...parsed,
-      results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+      results: parsed.results.map((row) => toMovieListItem(row, images.imageBaseUrl)),
     };
   },
   ['tmdb-movie-recommendations'],
@@ -418,7 +453,7 @@ export const getMovieSimilar = unstable_cache(
     const parsed = SimilarMoviesResponseSchema.parse(data);
     return {
       ...parsed,
-      results: parsed.results.map((row) => enrichMovieListItem(row, images.imageBaseUrl)),
+      results: parsed.results.map((row) => toMovieListItem(row, images.imageBaseUrl)),
     };
   },
   ['tmdb-movie-similar'],

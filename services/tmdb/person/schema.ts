@@ -23,7 +23,14 @@ export const PersonPopularListItemRowSchema = z.looseObject({
   profile_path: z.string().nullable().optional(),
 });
 export type PersonPopularListItemRow = z.infer<typeof PersonPopularListItemRowSchema>;
-export type PersonPopularListItem = PersonPopularListItemRow & { profileUrl: string };
+
+/** Popular list card — hot path returns only these fields. */
+export type PersonPopularListItem = {
+  id: number;
+  name: string;
+  profileUrl: string;
+  known_for_department: string | null | undefined;
+};
 
 const paginated = <T extends z.ZodType>(itemSchema: T) =>
   z.object({
@@ -65,7 +72,19 @@ export const PersonDetailsRowSchema = z.looseObject({
   profile_path: z.string().nullable().optional(),
 });
 export type PersonDetailsRow = z.infer<typeof PersonDetailsRowSchema>;
-export type PersonDetails = PersonDetailsRow & { profileUrl: string };
+
+/** Person profile for app UI — hot paths return only this shape. */
+export type PersonDetails = {
+  id: number;
+  name: string;
+  known_for_department: string | null | undefined;
+  biography: string | null | undefined;
+  birthday: string | null | undefined;
+  deathday: string | null | undefined;
+  place_of_birth: string | null | undefined;
+  profileUrl: string;
+};
+
 export const PersonDetailsSchema = PersonDetailsRowSchema;
 
 export type PersonCreditCardItem = {
@@ -77,6 +96,25 @@ export type PersonCreditCardItem = {
   character: string;
   vote_average: number;
   vote_count: number;
+};
+
+/** One combined-credits cast row — {@link enrichPersonCombinedCastForDisplay}. */
+export type PersonCombinedCastEntry = {
+  id: number;
+  media_type: 'movie' | 'tv';
+  title?: string;
+  name?: string;
+  release_date?: string;
+  first_air_date?: string;
+  poster_path?: string | null;
+  character?: string;
+  vote_average?: number;
+  vote_count?: number;
+};
+
+export type PersonCombinedCredits = {
+  id?: number;
+  cast: PersonCombinedCastEntry[];
 };
 
 export const PersonIdChangesResponseSchema = MovieIdChangesResponseSchema;
