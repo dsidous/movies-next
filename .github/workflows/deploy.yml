@@ -23,11 +23,26 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Check required configuration
+        run: |
+          if [ -z "${SST_SITE_DOMAIN}" ]; then
+            echo "::error::Set the Actions variable SST_SITE_DOMAIN (Settings → Secrets and variables → Actions → Variables)"
+            exit 1
+          fi
+        env:
+          SST_SITE_DOMAIN: ${{ vars.SST_SITE_DOMAIN }}
+
       - name: Install SST Providers
         run: npx sst install
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          # SST_SITE_DOMAIN is required. Other SST_* vars are optional (see sst.config.ts).
+          SST_APP_NAME: ${{ vars.SST_APP_NAME }}
+          SST_SITE_DOMAIN: ${{ vars.SST_SITE_DOMAIN }}
+          SST_NEXTJS_NAME: ${{ vars.SST_NEXTJS_NAME }}
+          SST_CLOUDFLARE_PROVIDER_VERSION: ${{ vars.SST_CLOUDFLARE_PROVIDER_VERSION }}
+          SST_RETAIN_STAGES: ${{ vars.SST_RETAIN_STAGES }}
 
       # 3. Deploy with SST
       - name: Deploy with SST
@@ -35,6 +50,11 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          SST_APP_NAME: ${{ vars.SST_APP_NAME }}
+          SST_SITE_DOMAIN: ${{ vars.SST_SITE_DOMAIN }}
+          SST_NEXTJS_NAME: ${{ vars.SST_NEXTJS_NAME }}
+          SST_CLOUDFLARE_PROVIDER_VERSION: ${{ vars.SST_CLOUDFLARE_PROVIDER_VERSION }}
+          SST_RETAIN_STAGES: ${{ vars.SST_RETAIN_STAGES }}
           # These are passed to the build process for Next.js
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}

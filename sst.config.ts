@@ -1,22 +1,46 @@
 // eslint-disable-next-line @typescript-eslint/triple-slash-reference -- SST forbids imports here; globals come from generated types
 /// <reference path="./.sst/platform/config.d.ts" />
 
+function envOrDefault(name: string, defaultValue: string): string {
+  const v = process.env[name];
+  return v != null && v !== '' ? v : defaultValue;
+}
+
+function requiredEnv(name: string): string {
+  const v = process.env[name];
+  if (v == null || v === '') {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return v;
+}
+
+const retainStages = new Set(
+  envOrDefault('SST_RETAIN_STAGES', 'production,prod')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean),
+);
+
 export default $config({
   app(input) {
+    const stage = input?.stage ?? '';
     return {
-      name: 'movies-next',
-      removal: input?.stage === 'production' ? 'retain' : 'remove',
+      name: envOrDefault('SST_APP_NAME', 'movies-next'),
+      removal: retainStages.has(stage) ? 'retain' : 'remove',
       home: 'aws',
       providers: {
-        cloudflare: '6.15.0',
+        cloudflare: envOrDefault('SST_CLOUDFLARE_PROVIDER_VERSION', '6.15.0'),
       },
     };
   },
   async run() {
-    new sst.aws.Nextjs('MyMovieApp', {
+    const domainName = requiredEnv('SST_SITE_DOMAIN');
+    const nextjsName = envOrDefault('SST_NEXTJS_NAME', 'MyMovieApp');
+
+    new sst.aws.Nextjs(nextjsName, {
       domain: {
-        name: 'watch.tamasjonas.com',
-        dns: sst.cloudflare.dns(), // This tells SST to use Cloudflare for DNS
+        name: domainName,
+        dns: sst.cloudflare.dns(),
       },
       environment: {
         CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY!,
