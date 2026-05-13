@@ -1,19 +1,16 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { enrichCastForDisplay, getConfiguration, getMovie } from '@services/tmdb';
-
-import { MovieCastSection } from '@/components/movie/movie-cast-section';
-import {
-  parseMovieIdParam,
-  prepareVideosForUi,
-} from '@/components/movie/movie-helpers';
-import { MovieHero } from '@/components/movie/movie-hero';
-import { MovieSimilarSection } from '@/components/movie/movie-similar-section';
-import { MovieVideosSection } from '@/components/movie/movie-videos-section';
 import { SITE_NAME } from '@/lib/constants/site';
 import { watchlistLookupKey } from '@/lib/watchlist-key';
 import { getWatchlistedKeys } from '@/lib/watchlisted-keys';
+import { enrichCastForDisplay, getConfiguration, getMovie } from '@services/tmdb';
+
+import { MovieCastSection } from '@/components/movie/movie-cast-section';
+import { parseMovieIdParam, prepareVideosForUi } from '@/components/movie/movie-helpers';
+import { MovieHero } from '@/components/movie/movie-hero';
+import { MovieSimilarSection } from '@/components/movie/movie-similar-section';
+import { MovieVideosSection } from '@/components/movie/movie-videos-section';
 
 type PageProps = {
   params: Promise<{ id: string }>;

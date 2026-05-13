@@ -182,6 +182,59 @@ export type CreditsCastForDisplay = {
   profile_path?: string | null;
 };
 
+function readFiniteTmdbPersonId(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value !== '') {
+    const n = Number(value);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+function readOptionalCreditsString(value: unknown): string | undefined {
+  if (value === null || value === undefined) return undefined;
+  if (typeof value === 'string') return value;
+  return undefined;
+}
+
+function readCreditId(value: unknown): string | undefined {
+  if (value === null || value === undefined) return undefined;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  return undefined;
+}
+
+/**
+ * `append_to_response=credits` on movie/TV detail. Only reads `cast`; ignores `crew`.
+ * Rows that fail sanity checks are skipped so one bad TMDB row cannot drop all credits.
+ */
+export function mapTmdbAppendedCreditsCast(rawCredits: unknown): CreditsCastForDisplay[] {
+  if (rawCredits == null || typeof rawCredits !== 'object') return [];
+  const castUnknown = (rawCredits as Record<string, unknown>).cast;
+  if (!Array.isArray(castUnknown)) return [];
+  const out: CreditsCastForDisplay[] = [];
+  for (const item of castUnknown) {
+    if (item == null || typeof item !== 'object') continue;
+    const row = item as Record<string, unknown>;
+    const id = readFiniteTmdbPersonId(row.id);
+    if (id == null) continue;
+    const pp = row.profile_path;
+    out.push({
+      id,
+      credit_id: readCreditId(row.credit_id),
+      name: readOptionalCreditsString(row.name),
+      character: readOptionalCreditsString(row.character),
+      profile_path:
+        pp === undefined
+          ? undefined
+          : pp === null || typeof pp === 'string'
+            ? pp
+            : undefined,
+    });
+  }
+  return out;
+}
+
 /** Alias for `MovieDetailsRowSchema`. */
 export const MovieDetailsSchema = MovieDetailsRowSchema;
 
@@ -223,26 +276,27 @@ export const MovieIdChangesResponseSchema = z.object({
 export type MovieIdChangesResponse = z.infer<typeof MovieIdChangesResponseSchema>;
 
 const PersonCreditBlockSchema = z.looseObject({
-  adult: z.boolean().optional(),
-  gender: z.number().optional(),
+  // TMDB often sends explicit null where these are unknown.
+  adult: z.boolean().nullish(),
+  gender: z.number().nullish(),
   id: z.number(),
-  known_for_department: z.string().optional(),
-  name: z.string(),
-  original_name: z.string().optional(),
-  popularity: z.number().optional(),
-  profile_path: z.string().nullable().optional(),
+  known_for_department: z.string().nullish(),
+  name: z.string().nullish(),
+  original_name: z.string().nullish(),
+  popularity: z.number().nullish(),
+  profile_path: z.string().nullable().nullish(),
 });
 
 export const CastMemberSchema = PersonCreditBlockSchema.extend({
-  cast_id: z.number().optional(),
-  character: z.string().optional(),
-  credit_id: z.string().optional(),
-  order: z.number().optional(),
+  cast_id: z.number().nullish(),
+  character: z.string().nullish(),
+  credit_id: z.string().nullish(),
+  order: z.number().nullish(),
 });
 export const CrewMemberSchema = PersonCreditBlockSchema.extend({
-  credit_id: z.string().optional(),
-  department: z.string().optional(),
-  job: z.string().optional(),
+  credit_id: z.string().nullish(),
+  department: z.string().nullish(),
+  job: z.string().nullish(),
 });
 
 export const MovieCreditsSchema = z.object({

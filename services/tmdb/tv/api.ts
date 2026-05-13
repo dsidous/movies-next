@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { tmdbFetch } from '../client';
 import { getConfiguration } from '../configuration/api';
+import { mapTmdbAppendedCreditsCast } from '../movie/schema';
 import {
   type DetailIncludeQuery,
   formatImageUrlWithBase,
@@ -345,17 +346,9 @@ export const getTv = unstable_cache(
       }
     }
     if (raw.credits != null && typeof raw.credits === 'object') {
-      const p = TvCreditsSchema.safeParse(raw.credits);
-      if (p.success) {
-        show.credits = {
-          cast: p.data.cast.map((c) => ({
-            id: c.id,
-            credit_id: c.credit_id,
-            name: c.name,
-            character: c.character,
-            profile_path: c.profile_path ?? null,
-          })),
-        };
+      const cast = mapTmdbAppendedCreditsCast(raw.credits);
+      if (cast.length) {
+        show.credits = { cast };
       }
     }
     if (raw.similar != null && typeof raw.similar === 'object') {

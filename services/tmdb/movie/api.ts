@@ -31,6 +31,7 @@ import {
   MovieKeywordsResponseSchema,
   MovieListChangesResponseSchema,
   MoviePublicListsResponseSchema,
+  mapTmdbAppendedCreditsCast,
   MovieRecommendationsResponseSchema,
   MovieReleaseDatesResponseSchema,
   MovieReviewsResponseSchema,
@@ -295,17 +296,9 @@ export const getMovie = unstable_cache(
       }
     }
     if (raw.credits != null && typeof raw.credits === 'object') {
-      const p = MovieCreditsSchema.safeParse(raw.credits);
-      if (p.success) {
-        movie.credits = {
-          cast: p.data.cast.map((c) => ({
-            id: c.id,
-            credit_id: c.credit_id,
-            name: c.name,
-            character: c.character,
-            profile_path: c.profile_path ?? null,
-          })),
-        };
+      const cast = mapTmdbAppendedCreditsCast(raw.credits);
+      if (cast.length) {
+        movie.credits = { cast };
       }
     }
     if (raw.similar != null && typeof raw.similar === 'object') {
