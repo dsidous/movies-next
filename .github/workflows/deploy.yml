@@ -8,16 +8,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      # 1. Install Bun
+      - uses: oven-sh/setup-bun@v1
         with:
-          node-version: 20
-          cache: 'npm'
+          bun-version: latest
 
+      # 2. Install dependencies using Bun
       - name: Install dependencies
-        run: npm install
+        run: bun install
 
+      # 3. Deploy with SST
       - name: Deploy with SST
-        run: npx sst deploy --stage prod
+        run: bunx sst deploy --stage prod
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
