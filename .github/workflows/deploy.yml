@@ -14,13 +14,18 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       # 2. Install dependencies using Bun
       - name: Install dependencies
         run: bun install
 
       # 3. Deploy with SST
       - name: Deploy with SST
-        run: npx sst deploy --stage --print-logs prod
+        run: npx sst deploy --stage prod --print-logs
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
