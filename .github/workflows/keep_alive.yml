@@ -1,0 +1,16 @@
+name: Keep Supabase Project Active
+
+on:
+  schedule:
+    - cron: '0 0 * * 7,3'
+  workflow_dispatch: # Allows you to run it manually for testing
+
+jobs:
+  ping_supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Request to Supabase API
+        run: |
+          curl -i -X GET "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}/rest/v1/" \
+          -H "apikey: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
+          -H "Authorization: Bearer ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}"
