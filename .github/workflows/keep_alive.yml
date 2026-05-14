@@ -2,7 +2,7 @@ name: Keep Supabase Project Active
 
 on:
   schedule:
-    - cron: '0 0 * * 7,3'
+    - cron: '0 0 * * 0,3' # Sun & Wed 00:00 UTC (Sun = 0, not 7)
   workflow_dispatch: # Allows you to run it manually for testing
 
 jobs:
