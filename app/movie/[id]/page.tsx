@@ -1,15 +1,20 @@
+import { Suspense } from 'react';
+
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { SITE_NAME } from '@/lib/constants/site';
-import { watchlistLookupKey } from '@/lib/watchlist-key';
-import { getWatchlistedKeys } from '@/lib/watchlisted-keys';
 import { enrichCastForDisplay, getConfiguration, getMovie } from '@services/tmdb';
 
 import { MovieCastSection } from '@/components/movie/movie-cast-section';
+import {
+  MovieHeroMyListFallback,
+  MovieHeroMyListServer,
+  MovieSimilarSectionFallback,
+  MovieSimilarWithWatchlistServer,
+} from '@/components/movie/movie-detail-streaming';
 import { parseMovieIdParam, prepareVideosForUi } from '@/components/movie/movie-helpers';
 import { MovieHero } from '@/components/movie/movie-hero';
-import { MovieSimilarSection } from '@/components/movie/movie-similar-section';
 import { MovieVideosSection } from '@/components/movie/movie-videos-section';
 
 type PageProps = {
@@ -36,17 +41,15 @@ export default async function MovieDetailPage({ params }: PageProps) {
   const id = parseMovieIdParam(raw);
   if (id == null) notFound();
 
-  const data = await Promise.all([
-    getMovie(id, { include: ['videos', 'credits', 'similar'] }),
-    getConfiguration(),
-    getWatchlistedKeys(),
-  ]).catch(() => null);
+  let movie: Awaited<ReturnType<typeof getMovie>>;
+  try {
+    movie = await getMovie(id, { include: ['videos', 'credits', 'similar'] });
+  } catch {
+    notFound();
+  }
 
-  if (data === null) notFound();
-
-  const [movie, { images }, watchlistedKeys] = data;
+  const { images } = await getConfiguration();
   const { imageBaseUrl } = images;
-  const watchlistSaved = new Set(watchlistedKeys);
 
   const videos = prepareVideosForUi(movie.videos?.results ?? []);
   const cast = enrichCastForDisplay(movie.credits?.cast, imageBaseUrl);
@@ -56,12 +59,18 @@ export default async function MovieDetailPage({ params }: PageProps) {
     <div className="min-h-screen bg-zinc-950 pb-10 text-zinc-100">
       <MovieHero
         movie={movie}
-        isWatchlisted={watchlistSaved.has(watchlistLookupKey('movie', id))}
+        listButton={
+          <Suspense fallback={<MovieHeroMyListFallback />}>
+            <MovieHeroMyListServer movieId={id} title={movie.title} />
+          </Suspense>
+        }
       />
       <div className="w-full min-w-0 space-y-8 px-4 pt-4 sm:space-y-10 sm:px-5 sm:pt-6 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
         <MovieVideosSection videos={videos} />
         <MovieCastSection cast={cast} />
-        <MovieSimilarSection items={similarResults} watchlistedKeys={watchlistedKeys} />
+        <Suspense fallback={<MovieSimilarSectionFallback />}>
+          <MovieSimilarWithWatchlistServer items={similarResults} />
+        </Suspense>
       </div>
     </div>
   );

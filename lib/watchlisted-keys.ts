@@ -1,14 +1,18 @@
+import { cache } from 'react';
+
+import { auth } from '@clerk/nextjs/server';
 import 'server-only';
 
-import { watchlistService } from '@/services/watchlist';
 import { ensureUserByClerkId } from '@/services/users';
-import { auth } from '@clerk/nextjs/server';
+import { watchlistService } from '@/services/watchlist';
 
-/** Empty when signed out. Ensures a `users` row exists when signed in. */
-export async function getWatchlistedKeys(): Promise<string[]> {
+async function getWatchlistedKeysUncached(): Promise<string[]> {
   const { userId: clerkUserId } = await auth();
   if (!clerkUserId) return [];
 
   const user = await ensureUserByClerkId(clerkUserId);
   return watchlistService.getKeysForUser(user.id);
 }
+
+/** Empty when signed out. Ensures a `users` row exists when signed in. Deduped per request. */
+export const getWatchlistedKeys = cache(getWatchlistedKeysUncached);

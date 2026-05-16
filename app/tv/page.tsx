@@ -1,17 +1,19 @@
+import { Suspense } from 'react';
+
 import type { Metadata } from 'next';
 
 import type { TvDiscoverFilters as TvDiscoverFilterParams } from '@/lib/actions/discover';
+import { SITE_NAME } from '@/lib/constants/site';
 import {
   parseTvBrowseSearchParams,
   serializeTvBrowseSearchParams,
   tvBrowseStateToDiscoverQuery,
 } from '@/lib/tv-discover-search-params';
-import { SITE_NAME } from '@/lib/constants/site';
-import { getWatchlistedKeys } from '@/lib/watchlisted-keys';
 import { discoverTv, getTvGenres } from '@services/tmdb';
 
+import { DiscoverGridSkeleton } from '@/components/media/discover-grid-skeleton';
 import { TvDiscoverFilters } from '@/components/tv/tv-discover-filters';
-import { TvDiscoverInfinite } from '@/components/tv/tv-discover-infinite';
+import { TvDiscoverInfiniteWithWatchlist } from '@/components/tv/tv-discover-with-watchlist';
 
 export const metadata: Metadata = {
   title: `Browse TV series | ${SITE_NAME}`,
@@ -34,11 +36,7 @@ export default async function TvDiscoverPage({ searchParams }: PageProps) {
   };
   const query = tvBrowseStateToDiscoverQuery({ ...filters, page: 1 });
 
-  const [genres, data, watchlistedKeys] = await Promise.all([
-    getTvGenres(),
-    discoverTv(query),
-    getWatchlistedKeys(),
-  ]);
+  const [genres, data] = await Promise.all([getTvGenres(), discoverTv(query)]);
 
   const genreMap = new Map(genres.map((g) => [g.id, g.name]));
 
@@ -49,9 +47,7 @@ export default async function TvDiscoverPage({ searchParams }: PageProps) {
   return (
     <div className="w-full min-w-0 pt-6 pb-10">
       <header className={`w-full space-y-2 ${pagePad}`}>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-          TV series
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">TV series</h1>
         <p className="text-muted-foreground">
           Explore shows with filters for sort order, genres, first air year, and minimum rating.
           Results come from TMDB&apos;s discover API and update when you change settings.
@@ -78,13 +74,9 @@ export default async function TvDiscoverPage({ searchParams }: PageProps) {
         </div>
       ) : (
         <div className={`mt-10 ${pagePad}`}>
-          <TvDiscoverInfinite
-            key={discoverKey || 'default'}
-            initial={data}
-            filters={filters}
-            genreMap={genreMap}
-            watchlistedKeys={watchlistedKeys}
-          />
+          <Suspense key={discoverKey || 'default'} fallback={<DiscoverGridSkeleton />}>
+            <TvDiscoverInfiniteWithWatchlist initial={data} filters={filters} genreMap={genreMap} />
+          </Suspense>
         </div>
       )}
     </div>

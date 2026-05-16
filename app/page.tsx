@@ -1,5 +1,6 @@
+import { Suspense } from 'react';
+
 import { pickHeroSpotlight } from '@/lib/pick-hero-spotlight';
-import { getWatchlistedKeys } from '@/lib/watchlisted-keys';
 import {
   getNowPlayingMovies,
   getOnTheAirTv,
@@ -11,7 +12,9 @@ import {
   getTrendingTv,
 } from '@services/tmdb';
 
-import { HomeFeed, type HomeFeedRow } from '@/components/media/home-feed';
+import type { HomeFeedRow } from '@/components/media/home-feed';
+import { HomeFeedSkeleton } from '@/components/media/home-feed-skeleton';
+import { HomeFeedWithWatchlist } from '@/components/media/home-feed-with-watchlist';
 import { TrendingHero } from '@/components/media/trending-hero';
 
 export const dynamic = 'force-dynamic';
@@ -26,7 +29,6 @@ export default async function Home() {
     topRatedTv,
     nowPlaying,
     onTheAir,
-    watchlistedKeys,
   ] = await Promise.all([
     getTrendingMovies('week', { page: 1 }),
     getTrendingTv('week', { page: 1 }),
@@ -36,7 +38,6 @@ export default async function Home() {
     getTopRatedTv({ page: 1 }),
     getNowPlayingMovies({ page: 1 }),
     getOnTheAirTv({ page: 1 }),
-    getWatchlistedKeys(),
   ]);
 
   const hero = pickHeroSpotlight(trendingMovies.results, trendingTv.results);
@@ -64,7 +65,9 @@ export default async function Home() {
     <div className="w-full min-w-0">
       {hero && <TrendingHero spotlight={hero} />}
 
-      <HomeFeed rows={rows} watchlistedKeys={watchlistedKeys} />
+      <Suspense fallback={<HomeFeedSkeleton />}>
+        <HomeFeedWithWatchlist rows={rows} />
+      </Suspense>
     </div>
   );
 }

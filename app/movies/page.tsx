@@ -1,16 +1,18 @@
+import { Suspense } from 'react';
+
 import type { Metadata } from 'next';
 
 import type { MoviesDiscoverFilters } from '@/lib/actions/discover';
+import { SITE_NAME } from '@/lib/constants/site';
 import {
   moviesBrowseStateToDiscoverQuery,
   parseMoviesBrowseSearchParams,
   serializeMoviesBrowseSearchParams,
 } from '@/lib/movies-discover-search-params';
-import { SITE_NAME } from '@/lib/constants/site';
-import { getWatchlistedKeys } from '@/lib/watchlisted-keys';
 import { discoverMovies, getMovieGenres } from '@services/tmdb';
 
-import { MoviesDiscoverInfinite } from '@/components/movies/movies-discover-infinite';
+import { DiscoverGridSkeleton } from '@/components/media/discover-grid-skeleton';
+import { MoviesDiscoverInfiniteWithWatchlist } from '@/components/movies/movies-discover-with-watchlist';
 import { MoviesFilters } from '@/components/movies/movies-filters';
 
 export const metadata: Metadata = {
@@ -34,11 +36,7 @@ export default async function MoviesPage({ searchParams }: PageProps) {
   };
   const query = moviesBrowseStateToDiscoverQuery({ ...filters, page: 1 });
 
-  const [genres, data, watchlistedKeys] = await Promise.all([
-    getMovieGenres(),
-    discoverMovies(query),
-    getWatchlistedKeys(),
-  ]);
+  const [genres, data] = await Promise.all([getMovieGenres(), discoverMovies(query)]);
 
   const genreMap = new Map(genres.map((g) => [g.id, g.name]));
 
@@ -76,13 +74,13 @@ export default async function MoviesPage({ searchParams }: PageProps) {
         </div>
       ) : (
         <div className={`mt-10 ${pagePad}`}>
-          <MoviesDiscoverInfinite
-            key={discoverKey || 'default'}
-            initial={data}
-            filters={filters}
-            genreMap={genreMap}
-            watchlistedKeys={watchlistedKeys}
-          />
+          <Suspense key={discoverKey || 'default'} fallback={<DiscoverGridSkeleton />}>
+            <MoviesDiscoverInfiniteWithWatchlist
+              initial={data}
+              filters={filters}
+              genreMap={genreMap}
+            />
+          </Suspense>
         </div>
       )}
     </div>

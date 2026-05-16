@@ -1,16 +1,16 @@
+import type { ReactNode } from 'react';
+
 import Image from 'next/image';
 
 import { cn } from '@/lib/utils';
 import type { MovieDetails } from '@services/tmdb/movie/schema';
 import { Star } from 'lucide-react';
 
-import { HeroMyListButton } from '@/components/watchlist/hero-my-list-button';
-
 import { formatRuntime } from './movie-helpers';
 
 type MovieHeroProps = {
   movie: MovieDetails;
-  isWatchlisted: boolean;
+  listButton: ReactNode;
   className?: string;
 };
 
@@ -20,7 +20,7 @@ function userScore(voteAverage: number, voteCount: number) {
   return voteAverage.toFixed(1);
 }
 
-export function MovieHero({ movie, isWatchlisted, className }: MovieHeroProps) {
+export function MovieHero({ movie, listButton, className }: MovieHeroProps) {
   const bg = movie.backdropUrl ?? movie.posterUrl;
   const year = movie.release_date ? movie.release_date.split('-')[0] : null;
   const runtime = formatRuntime(movie.runtime);
@@ -89,15 +89,7 @@ export function MovieHero({ movie, isWatchlisted, className }: MovieHeroProps) {
           </p>
         )}
 
-        <div className="mt-5 flex flex-wrap items-center gap-2 sm:mt-6 sm:gap-3">
-          <HeroMyListButton
-            key={`movie-${movie.id}-${isWatchlisted}`}
-            mediaType="movie"
-            mediaId={String(movie.id)}
-            title={movie.title}
-            initialIsSaved={isWatchlisted}
-          />
-        </div>
+        <div className="mt-5 flex flex-wrap items-center gap-2 sm:mt-6 sm:gap-3">{listButton}</div>
       </div>
     </section>
   );
