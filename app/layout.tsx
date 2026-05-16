@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 
 import { SiteHeader } from '@/components/layout/site-header';
+import { NavigationLoadingOverlay } from '@/components/providers/navigation-loading-overlay';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { SITE_NAME } from '@/lib/constants/site';
 
@@ -35,6 +36,7 @@ export default function RootLayout({
         <ClerkProvider>
           <QueryProvider>
             <SiteHeader />
+            <NavigationLoadingOverlay />
             <main className="w-full max-w-full min-w-0 flex-1">{children}</main>
           </QueryProvider>
         </ClerkProvider>
