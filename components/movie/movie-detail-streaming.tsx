@@ -10,7 +10,7 @@ import { MovieSimilarSection } from './movie-similar-section';
 export function MovieHeroMyListFallback() {
   return (
     <Skeleton
-      className="h-10 w-[10.5rem] rounded-md border border-white/20 bg-white/10 shadow-lg sm:h-11"
+      className="h-10 w-42 rounded-md border border-white/20 bg-white/10 shadow-lg sm:h-11"
       aria-hidden
     />
   );

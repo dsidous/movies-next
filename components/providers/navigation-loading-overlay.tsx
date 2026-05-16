@@ -2,8 +2,9 @@
 
 import { Suspense, useEffect, useState } from 'react';
 
-import { Loader2 } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
+
+import { Loader2 } from 'lucide-react';
 
 function canonicalRouteKey(pathname: string, params: URLSearchParams) {
   const sorted = [...params.entries()].sort(([a], [b]) => a.localeCompare(b));
@@ -29,6 +30,11 @@ function NavigationLoadingOverlayInner() {
       if (!(target instanceof Element)) return;
       const anchor = target.closest('a[href]');
       if (!(anchor instanceof HTMLAnchorElement)) return;
+
+      // Card-style links often wrap a `<Link>` around a tile; controls inside (e.g. watchlist
+      // button) must not arm the "navigating" overlay or it sticks forever when the URL unchanged.
+      const nestedControl = target.closest('button, input, textarea, select, [role="button"]');
+      if (nestedControl && nestedControl !== anchor) return;
       if (anchor.target === '_blank') return;
       if (anchor.hasAttribute('download')) return;
 
