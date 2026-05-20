@@ -6,6 +6,7 @@ export async function tmdbFetch<T>(endpoint: string, options: RequestInit = {}):
     headers: {
       Authorization: `Bearer ${process.env.TMDB_API_TOKEN}`, // no NEXT_PUBLIC_
       'Content-Type': 'application/json',
+      'Accept-Encoding': 'identity',
       ...options.headers,
     },
     next: {
