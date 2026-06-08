@@ -23,6 +23,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: `${SITE_NAME} — Movies & TV`,
   description: 'Discover popular movies, TV series, and people from TMDB.',
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+    },
+  },
 };
 
 export default function RootLayout({
