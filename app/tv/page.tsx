@@ -1,5 +1,3 @@
-import { Suspense } from 'react';
-
 import type { Metadata } from 'next';
 
 import type { TvDiscoverFilters as TvDiscoverFilterParams } from '@/lib/actions/discover';
@@ -9,11 +7,11 @@ import {
   serializeTvBrowseSearchParams,
   tvBrowseStateToDiscoverQuery,
 } from '@/lib/tv-discover-search-params';
+import { getWatchlistedKeys } from '@/lib/watchlisted-keys';
 import { discoverTv, getTvGenres } from '@services/tmdb';
 
-import { DiscoverGridSkeleton } from '@/components/media/discover-grid-skeleton';
 import { TvDiscoverFilters } from '@/components/tv/tv-discover-filters';
-import { TvDiscoverInfiniteWithWatchlist } from '@/components/tv/tv-discover-with-watchlist';
+import { TvDiscoverInfinite } from '@/components/tv/tv-discover-infinite';
 
 export const metadata: Metadata = {
   title: `Browse TV series | ${SITE_NAME}`,
@@ -36,7 +34,11 @@ export default async function TvDiscoverPage({ searchParams }: PageProps) {
   };
   const query = tvBrowseStateToDiscoverQuery({ ...filters, page: 1 });
 
-  const [genres, data] = await Promise.all([getTvGenres(), discoverTv(query)]);
+  const [genres, data, watchlistedKeys] = await Promise.all([
+    getTvGenres(),
+    discoverTv(query),
+    getWatchlistedKeys(),
+  ]);
 
   const genreMap = new Map(genres.map((g) => [g.id, g.name]));
 
@@ -74,9 +76,13 @@ export default async function TvDiscoverPage({ searchParams }: PageProps) {
         </div>
       ) : (
         <div className={`mt-10 ${pagePad}`}>
-          <Suspense key={discoverKey || 'default'} fallback={<DiscoverGridSkeleton />}>
-            <TvDiscoverInfiniteWithWatchlist initial={data} filters={filters} genreMap={genreMap} />
-          </Suspense>
+          <TvDiscoverInfinite
+            key={discoverKey || 'default'}
+            initial={data}
+            filters={filters}
+            genreMap={genreMap}
+            watchlistedKeys={watchlistedKeys}
+          />
         </div>
       )}
     </div>

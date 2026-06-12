@@ -18,6 +18,15 @@ function NavigationLoadingOverlayInner() {
   const [pending, setPending] = useState<string | null>(null);
 
   const here = canonicalRouteKey(pathname, searchParams);
+
+  const [prevHere, setPrevHere] = useState(here);
+  if (here !== prevHere) {
+    setPrevHere(here);
+    if (pending !== null) {
+      setPending(null);
+    }
+  }
+
   const visible = pending !== null && pending !== here;
 
   useEffect(() => {

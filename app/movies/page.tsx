@@ -1,5 +1,3 @@
-import { Suspense } from 'react';
-
 import type { Metadata } from 'next';
 
 import type { MoviesDiscoverFilters } from '@/lib/actions/discover';
@@ -9,10 +7,10 @@ import {
   parseMoviesBrowseSearchParams,
   serializeMoviesBrowseSearchParams,
 } from '@/lib/movies-discover-search-params';
+import { getWatchlistedKeys } from '@/lib/watchlisted-keys';
 import { discoverMovies, getMovieGenres } from '@services/tmdb';
 
-import { DiscoverGridSkeleton } from '@/components/media/discover-grid-skeleton';
-import { MoviesDiscoverInfiniteWithWatchlist } from '@/components/movies/movies-discover-with-watchlist';
+import { MoviesDiscoverInfinite } from '@/components/movies/movies-discover-infinite';
 import { MoviesFilters } from '@/components/movies/movies-filters';
 
 export const metadata: Metadata = {
@@ -36,7 +34,11 @@ export default async function MoviesPage({ searchParams }: PageProps) {
   };
   const query = moviesBrowseStateToDiscoverQuery({ ...filters, page: 1 });
 
-  const [genres, data] = await Promise.all([getMovieGenres(), discoverMovies(query)]);
+  const [genres, data, watchlistedKeys] = await Promise.all([
+    getMovieGenres(),
+    discoverMovies(query),
+    getWatchlistedKeys(),
+  ]);
 
   const genreMap = new Map(genres.map((g) => [g.id, g.name]));
 
@@ -74,13 +76,13 @@ export default async function MoviesPage({ searchParams }: PageProps) {
         </div>
       ) : (
         <div className={`mt-10 ${pagePad}`}>
-          <Suspense key={discoverKey || 'default'} fallback={<DiscoverGridSkeleton />}>
-            <MoviesDiscoverInfiniteWithWatchlist
-              initial={data}
-              filters={filters}
-              genreMap={genreMap}
-            />
-          </Suspense>
+          <MoviesDiscoverInfinite
+            key={discoverKey || 'default'}
+            initial={data}
+            filters={filters}
+            genreMap={genreMap}
+            watchlistedKeys={watchlistedKeys}
+          />
         </div>
       )}
     </div>
