@@ -61,7 +61,7 @@ Deploys automatically on push to `main` when `ai-search/**` changes (see [`.gith
 Manual deploy from `ai-search/`:
 
 ```bash
-pip install "modal>=0.73,<1"
+pip install "modal>=1.0,<2"
 modal deploy modal_app.py
 ```
 
