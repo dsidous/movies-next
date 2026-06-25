@@ -43,6 +43,8 @@ export default $config({
         dns: sst.cloudflare.dns(),
       },
       environment: {
+        AI_SEARCH_BASE_URL: process.env.AI_SEARCH_BASE_URL ?? '',
+        AI_SEARCH_SERVICE_KEY: process.env.AI_SEARCH_SERVICE_KEY ?? '',
         CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY!,
         CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET!,
         DATABASE_URL: process.env.DATABASE_URL!,

@@ -41,3 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 /.sst/
+
+# Python AI search service
+ai-search/.venv/
+ai-search/__pycache__/

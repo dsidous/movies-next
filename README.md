@@ -58,10 +58,23 @@ A Next.js app for browsing movies, TV series, and people using [The Movie Databa
 Put values in a **`.env`** file at the repo root (ignored by Git). Typical keys:
 
 - **TMDB** — `TMDB_BASE_URL`, `TMDB_API_TOKEN`
+- **AI search (Next.js)** — `AI_SEARCH_BASE_URL` (e.g. `http://localhost:8000`), optional `AI_SEARCH_SERVICE_KEY` (must match the Python service if set)
 - **Clerk** — `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and `CLERK_WEBHOOK_SECRET` if you use Clerk webhooks
 - **Supabase / Postgres** — `DATABASE_URL` (Supabase **Settings → Database → Connection string**, URI form for Drizzle), plus `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` if your app expects them at runtime
 
 If you only develop locally (`bun dev`) and rely on CI for deployment, you do **not** need AWS credentials, Cloudflare tokens, or `SST_*` variables unless you run SST CLI commands (`sst dev`, deploy, etc.) on your machine.
+
+### AI search microservice (local)
+
+Natural-language search uses a **separate Python FastAPI service** in [`ai-search/`](ai-search/). It is **not** deployed with the Next.js app.
+
+1. Set up and run the Python service — see [`ai-search/README.md`](ai-search/README.md)
+2. Add `AI_SEARCH_BASE_URL=http://localhost:8000` to your root `.env`
+3. Run both: `bun run ai-search:dev` and `bun dev`
+
+LLM API keys (`AI_API_KEY`) belong in `ai-search/.env` only — never in Next.js or GitHub Actions deploy secrets.
+
+If `AI_SEARCH_BASE_URL` is unset, search falls back to direct TMDB lookup with the raw query.
 
 ## Deployment (AWS + SST)
 
@@ -94,6 +107,10 @@ Use **repository** variables unless you introduce GitHub Environments (staging v
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`       | Clerk (publishable key at build/runtime)                                   |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_URL` | Supabase                                                             |
 | `TMDB_API_TOKEN`, `TMDB_BASE_URL`          | TMDB API                                                                |
+| `AI_SEARCH_BASE_URL`, `AI_SEARCH_SERVICE_KEY` | URL of the Modal-hosted AI search service (optional key for auth) |
+| `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET` | Deploy `ai-search/` to Modal ([`.github/workflows/deploy-ai-search.yml`](.github/workflows/deploy-ai-search.yml)) |
+
+The Next.js deploy workflow does **not** build or deploy `ai-search/`. AI search deploys separately to **Modal** on pushes to `main` that touch `ai-search/**`. Set `AI_SEARCH_BASE_URL` to the Modal web URL after the first deploy — see [`ai-search/README.md`](ai-search/README.md).
 
 ### Fresh clone / SST typings
 
@@ -105,7 +122,8 @@ Running **`npx sst install`** once generates `.sst/platform/config.d.ts` (gitign
 - `components/` — React components (shadcn-style UI under `components/ui/`, providers under `components/providers/`)
 - `db/` — Drizzle schema (`schema.ts`), DB client, migrations
 - `lib/` — Shared utilities; `lib/actions/` — Server Actions (TMDB, watchlist, discover pagination)
-- `services/` — TMDB client/schemas (`services/tmdb/`), app services (watchlist, users) using Drizzle
+- `services/` — TMDB client/schemas (`services/tmdb/`), AI search client (`services/ai-search/`), app services (watchlist, users) using Drizzle
+- `ai-search/` — Python FastAPI microservice for natural-language search (deployed to Modal via `.github/workflows/deploy-ai-search.yml`)
 - `sst.config.ts` — SST app metadata, **`sst.aws.Nextjs`**, environment variables forwarded to AWS, Cloudflare-backed domain
 - `.github/workflows/deploy.yml` — CI deploy pipeline
 

@@ -10,6 +10,8 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "bunx tsx db/seed.ts",
     "dev": "next dev",
+    "ai-search:setup": "cd ai-search && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt",
+    "ai-search:dev": "bash ai-search/dev.sh",
     "format": "bunx prettier --write .",
     "format:check": "bunx prettier --check .",
     "lint": "eslint",

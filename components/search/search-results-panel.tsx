@@ -141,6 +141,7 @@ export function SearchResultsPanel({
     >
       {loading && (
         <div className="space-y-2">
+          <p className="mb-3 px-3 text-xs text-muted-foreground">Searching with AI…</p>
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="flex items-center gap-4 rounded-xl px-3 py-3 sm:px-4 sm:py-4">
               <Skeleton className="size-16 shrink-0 rounded-xl sm:size-18" />

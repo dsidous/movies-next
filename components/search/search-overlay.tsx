@@ -5,15 +5,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { searchMultiAction } from '@/lib/actions/search';
 import { cn } from '@/lib/utils';
 import type { SearchMultiResult } from '@services/tmdb';
-import { Search, X } from 'lucide-react';
+import { Search, Sparkles, X } from 'lucide-react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 
 import { SearchResultsPanel } from '@/components/search/search-results-panel';
 import { Dialog, DialogOverlay, DialogPortal, DialogTitle } from '@/components/ui/dialog';
 
-const SEARCH_PLACEHOLDER = 'Search movies, TV shows, and people…';
+const SEARCH_PLACEHOLDER = 'Describe what you\u2019re looking for\u2026';
 
-const DEBOUNCE_MS = 300;
+const DEBOUNCE_MS = 600;
 
 interface SearchOverlayInnerProps {
   onOpenChange: (open: boolean) => void;
@@ -124,13 +124,17 @@ function SearchOverlayInner({ onOpenChange }: SearchOverlayInnerProps) {
 
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="pointer-events-none absolute inset-x-0 top-[10vh] z-10 shrink-0 px-4 sm:px-6">
-          <div className="pointer-events-auto mx-auto flex w-full max-w-2xl items-center gap-3 sm:gap-4">
-            {searchInput}
+          <div className="pointer-events-auto mx-auto w-full max-w-2xl">
+            <p className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Sparkles className="size-3.5 shrink-0" aria-hidden />
+              <span>AI-powered search</span>
+            </p>
+            <div className="flex items-center gap-3 sm:gap-4">{searchInput}</div>
           </div>
         </div>
 
         {hasResults && (
-          <div className="absolute inset-x-0 top-[calc(10vh+4rem)] bottom-[10vh] z-0 px-3 sm:px-4">
+          <div className="absolute inset-x-0 top-[calc(10vh+5rem)] bottom-[10vh] z-0 px-3 sm:px-4">
             <div className="mx-auto h-full max-w-2xl pt-4">
               <SearchResultsPanel
                 loading={loading}

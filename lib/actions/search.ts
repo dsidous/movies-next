@@ -1,8 +1,41 @@
 'use server';
 
+import { interpretSearchQuery } from '@services/ai-search';
 import { searchMulti } from '@services/tmdb';
+import type { SearchMultiResult } from '@services/tmdb';
 
 type SearchData = Awaited<ReturnType<typeof searchMulti>>;
+
+const MAX_SEARCH_TERMS = 5;
+
+async function resolveSearchTerms(query: string): Promise<string[]> {
+  if (!process.env.AI_SEARCH_BASE_URL?.trim()) {
+    return [query];
+  }
+
+  try {
+    const { search_terms } = await interpretSearchQuery(query);
+    const terms = search_terms
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .slice(0, MAX_SEARCH_TERMS);
+    return terms.length > 0 ? terms : [query];
+  } catch {
+    return [query];
+  }
+}
+
+function dedupeResults(results: SearchMultiResult[]): SearchMultiResult[] {
+  const seen = new Set<string>();
+  const deduped: SearchMultiResult[] = [];
+  for (const result of results) {
+    const key = `${result.media_type}-${result.id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(result);
+  }
+  return deduped;
+}
 
 export async function searchMultiAction(query: string, page: number = 1) {
   const q = query.trim();
@@ -12,7 +45,17 @@ export async function searchMultiAction(query: string, page: number = 1) {
   }
   const safePage = Number.isFinite(page) && page >= 1 ? Math.floor(page) : 1;
   try {
-    const data = await searchMulti({ query: q, page: safePage });
+    const terms = await resolveSearchTerms(q);
+    const searches = await Promise.all(
+      terms.map((term) => searchMulti({ query: term, page: safePage })),
+    );
+    const results = dedupeResults(searches.flatMap((s) => s.results));
+    const data: SearchData = {
+      page: safePage,
+      results,
+      total_pages: 1,
+      total_results: results.length,
+    };
     return { ok: true as const, data };
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Search failed';

@@ -1,0 +1,30 @@
+name: Deploy AI Search to Modal
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ai-search/**'
+      - '.github/workflows/deploy-ai-search.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-search
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install "modal>=0.73,<1"
+
+      - run: modal deploy modal_app.py
