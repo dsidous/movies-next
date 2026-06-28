@@ -17,6 +17,9 @@ export type SearchMultiResult = {
   profileUrl?: string;
   releaseYear?: string;
   firstAirYear?: string;
+  voteAverage?: number;
+  voteCount?: number;
+  genres?: string[];
 };
 
 export const SearchMultiResponseSchema = z.object({

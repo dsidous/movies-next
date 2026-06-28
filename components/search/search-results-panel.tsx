@@ -7,7 +7,7 @@ import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
 import type { SearchMultiResult } from '@services/tmdb';
-import { Search } from 'lucide-react';
+import { Search, Star } from 'lucide-react';
 
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -42,6 +42,14 @@ function resultSubtitle(r: SearchMultiResult): string {
     return 'Person';
   }
   return String(r.media_type);
+}
+
+function resultHasRating(r: SearchMultiResult) {
+  return (
+    typeof r.voteCount === 'number' &&
+    r.voteCount > 0 &&
+    typeof r.voteAverage === 'number'
+  );
 }
 
 function resultImageUrl(r: SearchMultiResult) {
@@ -175,6 +183,8 @@ export function SearchResultsPanel({
               const label = resultLabel(r);
               const sub = resultSubtitle(r);
               const src = resultImageUrl(r);
+              const hasRating = resultHasRating(r);
+              const genres = r.genres ?? [];
               return (
                 <li key={`${r.media_type}-${r.id}`}>
                   <Link
@@ -206,7 +216,39 @@ export function SearchResultsPanel({
                       <div className="truncate text-base font-medium leading-snug sm:text-lg">
                         {label}
                       </div>
-                      <div className="text-sm text-muted-foreground">{sub}</div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className="min-w-0 truncate">{sub}</span>
+                        {hasRating && (
+                          <span
+                            className="inline-flex shrink-0 items-center gap-0.5 tabular-nums text-amber-600 dark:text-amber-300"
+                            title={`Rated ${r.voteAverage!.toFixed(1)} out of 10`}
+                          >
+                            <Star
+                              className="size-3 shrink-0 fill-amber-500 text-amber-500 dark:fill-amber-400 dark:text-amber-400"
+                              aria-hidden
+                            />
+                            {r.voteAverage!.toFixed(1)}
+                          </span>
+                        )}
+                      </div>
+                      {genres.length > 0 ? (
+                        <div className="mt-1.5 flex flex-wrap gap-1" role="list" aria-label="Genres">
+                          {genres.slice(0, 3).map((genre) => (
+                            <span
+                              key={genre}
+                              role="listitem"
+                              className="rounded-md border border-border/80 bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground sm:px-2 sm:text-[11px]"
+                            >
+                              {genre}
+                            </span>
+                          ))}
+                          {genres.length > 3 ? (
+                            <span className="text-[10px] text-muted-foreground sm:text-[11px]">
+                              +{genres.length - 3}
+                            </span>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   </Link>
                 </li>
