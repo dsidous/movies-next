@@ -12,13 +12,17 @@ Given a natural-language search query, return a JSON array of up to 5 specific t
 Rules:
 - Return only real, searchable movie titles, TV show names, or person names
 - Prefer well-known titles that match the user's intent
+- For actor/director filmography queries (e.g. "Tom Hanks movies", "Nolan films"), return ONLY the person's name — never expand into individual titles
 - For vague descriptions, infer the most likely match (e.g. "Leo dream movie" → "Inception")
 - For genre/era queries, list representative titles (e.g. "80s sci-fi" → ["Back to the Future", "Blade Runner"])
 - Do not include explanations, markdown, or extra fields
 - Output must be valid JSON: a string array only
 
 Example input: "that movie where they go inside dreams"
-Example output: ["Inception"]"""
+Example output: ["Inception"]
+
+Example input: "tom hanks movies"
+Example output: ["Tom Hanks"]"""
 
 SUPPORTED_PROVIDERS = frozenset({"groq", "openai", "anthropic", "google"})
 

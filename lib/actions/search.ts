@@ -1,7 +1,12 @@
 'use server';
 
+import { parsePersonMediaQuery } from '@/lib/search-person-query';
+import {
+  filterResultsForSearchTerm,
+  wasAiExpanded,
+} from '@/lib/search-relevance';
 import { interpretSearchQuery } from '@services/ai-search';
-import { searchMulti } from '@services/tmdb';
+import { searchMulti, searchPersonMediaResults } from '@services/tmdb';
 import type { SearchMultiResult } from '@services/tmdb';
 
 type SearchData = Awaited<ReturnType<typeof searchMulti>>;
@@ -45,11 +50,32 @@ export async function searchMultiAction(query: string, page: number = 1) {
   }
   const safePage = Number.isFinite(page) && page >= 1 ? Math.floor(page) : 1;
   try {
+    const personQuery = parsePersonMediaQuery(q);
+    if (personQuery) {
+      const results = await searchPersonMediaResults(
+        personQuery.personName,
+        personQuery.mediaFilter,
+      );
+      const data: SearchData = {
+        page: safePage,
+        results,
+        total_pages: 1,
+        total_results: results.length,
+      };
+      return { ok: true as const, data };
+    }
+
     const terms = await resolveSearchTerms(q);
+    const aiExpanded = wasAiExpanded(q, terms);
     const searches = await Promise.all(
       terms.map((term) => searchMulti({ query: term, page: safePage })),
     );
-    const results = dedupeResults(searches.flatMap((s) => s.results));
+    const merged = searches.flatMap((search, index) => {
+      const term = terms[index]!;
+      const results = search.results;
+      return aiExpanded ? filterResultsForSearchTerm(results, term) : results;
+    });
+    const results = dedupeResults(merged);
     const data: SearchData = {
       page: safePage,
       results,

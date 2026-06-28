@@ -21,5 +21,6 @@ export * from './discover/schema';
 export { discoverEndpoints } from './discover/endpoints';
 
 export * from './search/api';
+export * from './search/person-media';
 export * from './search/schema';
 export { searchEndpoints } from './search/endpoints';
