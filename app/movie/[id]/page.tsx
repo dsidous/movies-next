@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { SITE_NAME } from '@/lib/constants/site';
-import { enrichCastForDisplay, getConfiguration, getMovie } from '@services/tmdb';
+import { enrichCastForDisplay, getConfiguration, getMovie, getMovieReviews } from '@services/tmdb';
 
 import { MovieCastSection } from '@/components/movie/movie-cast-section';
 import {
@@ -16,6 +16,7 @@ import {
 import { parseMovieIdParam, prepareVideosForUi } from '@/components/movie/movie-helpers';
 import { MovieHero } from '@/components/movie/movie-hero';
 import { MovieVideosSection } from '@/components/movie/movie-videos-section';
+import { MediaReviewsSection } from '@/components/media/media-reviews-section';
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -42,14 +43,20 @@ export default async function MovieDetailPage({ params }: PageProps) {
   if (id == null) notFound();
 
   let movie: Awaited<ReturnType<typeof getMovie>>;
+  let reviews: Awaited<ReturnType<typeof getMovieReviews>> | null = null;
+  let imageBaseUrl: string;
   try {
-    movie = await getMovie(id, { include: ['videos', 'credits', 'similar'] });
+    const [movieResult, config, reviewsResult] = await Promise.all([
+      getMovie(id, { include: ['videos', 'credits', 'similar'] }),
+      getConfiguration(),
+      getMovieReviews(id).catch(() => null),
+    ]);
+    movie = movieResult;
+    imageBaseUrl = config.images.imageBaseUrl;
+    reviews = reviewsResult;
   } catch {
     notFound();
   }
-
-  const { images } = await getConfiguration();
-  const { imageBaseUrl } = images;
 
   const videos = prepareVideosForUi(movie.videos?.results ?? []);
   const cast = enrichCastForDisplay(movie.credits?.cast, imageBaseUrl);
@@ -68,6 +75,12 @@ export default async function MovieDetailPage({ params }: PageProps) {
       <div className="w-full min-w-0 space-y-8 px-4 pt-4 sm:space-y-10 sm:px-5 sm:pt-6 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
         <MovieVideosSection videos={videos} />
         <MovieCastSection cast={cast} />
+        <MediaReviewsSection
+          media="movie"
+          mediaId={id}
+          reviews={reviews}
+          imageBaseUrl={imageBaseUrl}
+        />
         <Suspense fallback={<MovieSimilarSectionFallback />}>
           <MovieSimilarWithWatchlistServer items={similarResults} />
         </Suspense>

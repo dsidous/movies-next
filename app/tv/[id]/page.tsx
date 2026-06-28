@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { enrichCastForDisplay, getConfiguration, getTv, getTvSeason } from '@services/tmdb';
+import { enrichCastForDisplay, getConfiguration, getTv, getTvReviews, getTvSeason } from '@services/tmdb';
 
 import { getLatestSeasonNumber, parseTmdbIdParam } from '@/lib/tv-helpers';
 import { MovieCastSection } from '@/components/movie/movie-cast-section';
@@ -9,6 +9,7 @@ import {
   prepareVideosForUi,
 } from '@/components/movie/movie-helpers';
 import { MovieVideosSection } from '@/components/movie/movie-videos-section';
+import { MediaReviewsSection } from '@/components/media/media-reviews-section';
 import { TvHero } from '@/components/tv/tv-hero';
 import { TvLatestSeasonSection } from '@/components/tv/tv-latest-season-section';
 import { TvSimilarSection } from '@/components/tv/tv-similar-section';
@@ -44,11 +45,12 @@ export default async function TvDetailPage({ params }: PageProps) {
     getTv(id, { include: ['videos', 'credits', 'similar'] }),
     getConfiguration(),
     getWatchlistedKeys(),
+    getTvReviews(id).catch(() => null),
   ]).catch(() => null);
 
   if (base === null) notFound();
 
-  const [show, { images }, watchlistedKeys] = base;
+  const [show, { images }, watchlistedKeys, reviews] = base;
   const { imageBaseUrl } = images;
   const watchlistSaved = new Set(watchlistedKeys);
 
@@ -75,6 +77,12 @@ export default async function TvDetailPage({ params }: PageProps) {
         )}
         <MovieVideosSection videos={videos} />
         <MovieCastSection cast={cast} />
+        <MediaReviewsSection
+          media="tv"
+          mediaId={id}
+          reviews={reviews}
+          imageBaseUrl={imageBaseUrl}
+        />
         <TvSimilarSection items={similarResults} watchlistedKeys={watchlistedKeys} />
       </div>
     </div>

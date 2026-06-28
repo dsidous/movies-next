@@ -408,6 +408,7 @@ export const MovieReviewItemSchema = z.object({
   updated_at: z.string().optional().nullable(),
   url: z.string().optional().nullable(),
 });
+export type MovieReviewItem = z.infer<typeof MovieReviewItemSchema>;
 export const MovieReviewsResponseSchema = z.object({
   id: z.number().optional().nullable(),
   page: z.number(),
