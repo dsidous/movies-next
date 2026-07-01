@@ -63,5 +63,8 @@
   "trustedDependencies": [
     "sharp",
     "unrs-resolver"
-  ]
+  ],
+  "overrides": {
+    "jsdom": "25.0.1"
+  }
 }
