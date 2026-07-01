@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
 
 import {
@@ -8,15 +9,16 @@ import {
   reviewAuthorInitials,
   reviewAuthorName,
 } from '@/lib/media-review-helpers';
+import { REVIEW_EXPAND_THRESHOLD, reviewPlainTextLength } from '@/lib/review-content';
 import type { MovieReviewItem } from '@services/tmdb/movie/schema';
 import { Star } from 'lucide-react';
 
-import {
-  REVIEW_EXPAND_THRESHOLD,
-  ReviewContentBody,
-  reviewPlainTextLength,
-} from '@/components/media/review-content';
 import { Button } from '@/components/ui/button';
+
+const ReviewContentBody = dynamic(
+  () => import('@/components/media/review-content').then((mod) => mod.ReviewContentBody),
+  { ssr: false },
+);
 
 type ReviewCardProps = {
   review: MovieReviewItem;
