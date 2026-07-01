@@ -1,4 +1,4 @@
-import DOMPurify from 'isomorphic-dompurify';
+import sanitizeHtml from 'sanitize-html';
 
 /** Visible-text length threshold for showing Read more. */
 export const REVIEW_EXPAND_THRESHOLD = 280;
@@ -55,17 +55,19 @@ function stripTags(text: string) {
 }
 
 function sanitizeInlineHtml(html: string) {
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: INLINE_ALLOWED_TAGS,
-    ALLOWED_ATTR: [],
+  return sanitizeHtml(html, {
+    allowedTags: INLINE_ALLOWED_TAGS,
+    allowedAttributes: {},
   });
 }
 
 function sanitizeBlockHtml(html: string) {
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: BLOCK_ALLOWED_TAGS,
-    ALLOWED_ATTR: ['href'],
-    ALLOWED_URI_REGEXP: /^https?:/i,
+  return sanitizeHtml(html, {
+    allowedTags: BLOCK_ALLOWED_TAGS,
+    allowedAttributes: {
+      a: ['href'],
+    },
+    allowedSchemes: ['http', 'https'],
   });
 }
 
