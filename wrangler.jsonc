@@ -23,7 +23,7 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      "id": "796c7b15-2acd-40e3-9e06-700f231f6387",
+      "id": "5b9fe51a45034a94beaae3e630b37cc3",
       "localConnectionString": "postgres://user:pass@localhost:5432/movies",
     },
   ],
