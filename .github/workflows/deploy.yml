@@ -40,12 +40,6 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Apply Cloudflare security settings
-        run: bash scripts/cloudflare-security.sh
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          SST_SITE_DOMAIN: ${{ vars.SST_SITE_DOMAIN }}
-
       - name: Set runtime secrets
         run: |
           printf '%s' "$TMDB_API_TOKEN" | bunx wrangler secret put TMDB_API_TOKEN
