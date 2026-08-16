@@ -16,8 +16,31 @@ DOMAIN="${SST_SITE_DOMAIN:?SST_SITE_DOMAIN is required}"
 
 if [[ -z "${CLOUDFLARE_ZONE_ID:-}" ]]; then
   echo "Resolving zone id for $DOMAIN..."
-  resp=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$API/zones?name=$DOMAIN")
-  CLOUDFLARE_ZONE_ID=$(printf '%s' "$resp" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["result"][0]["id"])')
+  # The site hostname may be a subdomain (e.g. watch.tamasjonas.com); the Cloudflare
+  # zone is registered on the parent domain (tamasjonas.com). Walk up the labels
+  # from the full hostname to the TLD and use the first zone the token can see.
+  CLOUDFLARE_ZONE_ID=""
+  candidate="$DOMAIN"
+  while [[ -n "$candidate" ]]; do
+    resp=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$API/zones?name=$candidate")
+    CLOUDFLARE_ZONE_ID=$(printf '%s' "$resp" | python3 -c '
+import json, sys
+try:
+    d = json.load(sys.stdin)
+    if d.get("success") and d.get("result"):
+        print(d["result"][0]["id"])
+except Exception:
+    pass
+')
+    if [[ -n "$CLOUDFLARE_ZONE_ID" ]]; then
+      break
+    fi
+    candidate="${candidate#*.}"
+  done
+  if [[ -z "$CLOUDFLARE_ZONE_ID" ]]; then
+    echo "ERROR: could not find a Cloudflare zone for $DOMAIN. Is the domain on your account and does the token have Zone Read permission?" >&2
+    exit 1
+  fi
 fi
 echo "Zone id: $CLOUDFLARE_ZONE_ID"
 
