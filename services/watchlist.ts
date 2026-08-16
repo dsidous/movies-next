@@ -1,4 +1,4 @@
-import { db } from '@/db';
+import { getDb } from '@/db';
 import { and, desc, eq } from 'drizzle-orm';
 import 'server-only';
 
@@ -7,6 +7,7 @@ import { watchlist } from '@/db/schema';
 export const watchlistService = {
   /** Composite keys: `"movie:123"` / `"tv:456"` (matches `media_id` text). */
   async getKeysForUser(userId: string) {
+    const db = await getDb();
     const rows = await db
       .select({
         mediaType: watchlist.mediaType,
@@ -19,6 +20,7 @@ export const watchlistService = {
   },
 
   async getForUser(userId: string) {
+    const db = await getDb();
     return await db
       .select()
       .from(watchlist)
@@ -27,6 +29,7 @@ export const watchlistService = {
   },
 
   async toggle(userId: string, mediaType: 'movie' | 'tv', mediaId: string, title: string) {
+    const db = await getDb();
     // Check if it exists
     const existing = await db
       .select()

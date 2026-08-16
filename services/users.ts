@@ -1,9 +1,10 @@
-import { db } from '@/db';
+import { getDb } from '@/db';
 import { eq } from 'drizzle-orm';
 
 import { users } from '@/db/schema';
 
 export async function upsertUser(clerkId: string) {
+  const db = await getDb();
   return await db
     .insert(users)
     .values({
@@ -21,6 +22,7 @@ export async function upsertUser(clerkId: string) {
  */
 export async function ensureUserByClerkId(clerkId: string) {
   await upsertUser(clerkId);
+  const db = await getDb();
   const user = await db.query.users.findFirst({
     where: eq(users.externalId, clerkId),
   });

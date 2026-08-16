@@ -1,8 +1,6 @@
-const config = {
-  default: {},
-  dangerous: {
-    disableIncrementalCache: true,
-    disableTagCache: true,
-  },
-};
-export default config;
+import { defineCloudflareConfig } from '@opennextjs/cloudflare';
+
+export default defineCloudflareConfig({
+  incrementalCache: 'dummy',
+  tagCache: 'dummy',
+});
