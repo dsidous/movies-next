@@ -52,15 +52,8 @@ curl -fsS -X PUT \
   --data '{"fight_mode":true,"ai_bots_protection":"block"}' \
   "$API/zones/$CLOUDFLARE_ZONE_ID/bot_management" >/dev/null
 
-# 2. Rate limiting ruleset (replaces the entry point ruleset so the config is deterministic)
-echo "Applying rate limiting rules..."
-curl -fsS -X PUT \
-  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  --data @- \
-  "$API/zones/$CLOUDFLARE_ZONE_ID/rulesets/phases/http_ratelimit/entrypoint" <<'JSON'
-{
-  "rules": [
+# 2. Rate limiting ruleset (deterministic: always replace the entry point rules)
+RATE_RULES='[
     {
       "expression": "(http.request.uri.path matches \"^/api/\")",
       "description": "Limit /api/* traffic per client",
@@ -83,8 +76,31 @@ curl -fsS -X PUT \
         "mitigation_timeout": 300
       }
     }
-  ]
-}
-JSON
+  ]'
+
+echo "Applying rate limiting rules..."
+# Check whether the http_ratelimit phase entry point ruleset already exists.
+existing=$(curl -sS -w '\n%{http_code}' \
+  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+  "$API/zones/$CLOUDFLARE_ZONE_ID/rulesets/phases/http_ratelimit/entrypoint")
+http_code=$(printf '%s' "$existing" | tail -n1)
+body=$(printf '%s' "$existing" | sed '$d')
+
+if [[ "$http_code" == "404" ]]; then
+  echo "Creating http_ratelimit entry point ruleset..."
+  curl -fsS -X POST \
+    -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+    -H "Content-Type: application/json" \
+    --data "{\"name\":\"Rate limiting rules\",\"kind\":\"zone\",\"phase\":\"http_ratelimit\",\"rules\":$RATE_RULES}" \
+    "$API/zones/$CLOUDFLARE_ZONE_ID/rulesets" >/dev/null
+else
+  ruleset_id=$(printf '%s' "$body" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["result"]["id"])')
+  echo "Updating http_ratelimit entry point ruleset ($ruleset_id)..."
+  curl -fsS -X PUT \
+    -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+    -H "Content-Type: application/json" \
+    --data "{\"rules\":$RATE_RULES}" \
+    "$API/zones/$CLOUDFLARE_ZONE_ID/rulesets/$ruleset_id" >/dev/null
+fi
 
 echo "Cloudflare security settings applied."
