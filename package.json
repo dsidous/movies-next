@@ -19,7 +19,8 @@
     "tunnel": "ngrok http 3000 --url=chasmogamic-depauperate-darius.ngrok-free.dev",
     "build:cloudflare": "opennextjs-cloudflare build",
     "preview:cloudflare": "wrangler dev --env-file .env",
-    "deploy:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
+    "deploy:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "postinstall": "node scripts/patch-opennext-init.js"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.2.7",
