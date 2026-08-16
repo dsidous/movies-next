@@ -42,6 +42,7 @@ jobs:
 
       - name: Set runtime secrets
         run: |
+          printf '%s' "$TMDB_BASE_URL" | bunx wrangler secret put TMDB_BASE_URL
           printf '%s' "$TMDB_API_TOKEN" | bunx wrangler secret put TMDB_API_TOKEN
           printf '%s' "$CLERK_SECRET_KEY" | bunx wrangler secret put CLERK_SECRET_KEY
           printf '%s' "$CLERK_WEBHOOK_SECRET" | bunx wrangler secret put CLERK_WEBHOOK_SECRET
@@ -54,6 +55,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           TMDB_API_TOKEN: ${{ secrets.TMDB_API_TOKEN }}
+          TMDB_BASE_URL: ${{ secrets.TMDB_BASE_URL }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
