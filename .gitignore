@@ -42,6 +42,10 @@ next-env.d.ts
 
 /.sst/
 
+# OpenNext Cloudflare build output
+/.open-next/
+/.wrangler/
+
 # Python AI search service
 ai-search/.venv/
 ai-search/__pycache__/
