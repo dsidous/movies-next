@@ -22,8 +22,9 @@ export async function POST(req: Request) {
   }
 
   // 2. Get the raw body as a string for verification
-  const payload = await req.json();
-  const body = JSON.stringify(payload);
+  //    (Svix signs the exact raw bytes; re-serializing via JSON.parse/stringify
+  //    can alter them — e.g. drop a trailing newline — and break verification.)
+  const body = await req.text();
 
   // 3. Verify the payload
   const wh = new Webhook(WEBHOOK_SECRET);
