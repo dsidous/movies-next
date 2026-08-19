@@ -25,7 +25,7 @@ Create `ai-search/.env`:
 
 ```bash
 AI_PROVIDER=groq
-AI_MODEL=gqwen/qwen3.6-27b
+AI_MODEL=qwen/qwen3.6-27b
 AI_API_KEY=your-provider-api-key
 
 # Optional shared secret (must match Next.js AI_SEARCH_SERVICE_KEY)
@@ -86,7 +86,7 @@ If `AI_SEARCH_SERVICE_KEY` is set, send `Authorization: Bearer <key>`.
 | Variable                | Required | Description                                                                                                                        |
 | ----------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `AI_PROVIDER`           | No       | `groq` (default), `openai`, `anthropic`, or `google`                                                                               |
-| `AI_MODEL`              | No       | Model name for the chosen provider. Default `gpt-oss-120b` for Groq (Groq decommissioned `llama-3.3-70b-versatile` on 2026-08-16). |
+| `AI_MODEL`              | No       | Model name for the chosen provider. Default `qwen/qwen3.6-27b` for Groq (Groq decommissioned `llama-3.3-70b-versatile` on 2026-08-16). |
 | `AI_API_KEY`            | Yes      | API key for the chosen provider (provider-agnostic name)                                                                           |
 | `AI_SEARCH_SERVICE_KEY` | No       | Bearer token for service-to-service auth                                                                                           |
 | `PORT`                  | No       | Default `8000` (local only; Modal serves ASGI directly)                                                                            |
@@ -97,7 +97,7 @@ If `AI_SEARCH_SERVICE_KEY` is set, send `Authorization: Bearer <key>`.
 
 ```bash
 AI_PROVIDER=groq
-AI_MODEL=gpt-oss-120b
+AI_MODEL=qwen/qwen3.6-27b
 AI_API_KEY=gsk_...
 ```
 

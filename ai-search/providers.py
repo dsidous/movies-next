@@ -31,15 +31,12 @@ def _resolve_model(settings: Settings) -> str:
     provider = settings.ai_provider.strip().lower()
     model = settings.ai_model.strip()
 
-    if "/" in model:
-        return model
-
     if provider == "groq":
-        return f"groq/{model}"
+        return model if model.startswith("groq/") else f"groq/{model}"
     if provider == "anthropic":
-        return f"anthropic/{model}"
+        return model if model.startswith("anthropic/") else f"anthropic/{model}"
     if provider == "google":
-        return f"gemini/{model}"
+        return model if model.startswith("gemini/") else f"gemini/{model}"
     return model
 
 
