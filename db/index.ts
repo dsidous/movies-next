@@ -1,6 +1,7 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import { cache } from 'react';
 
 import * as schema from './schema';
 
@@ -22,9 +23,6 @@ async function resolveConnectionString(): Promise<string> {
   return process.env.DATABASE_URL!;
 }
 
-let cachedConnectionString: string | undefined;
-let dbPromise: ReturnType<typeof createDb> | undefined;
-
 function createDb(connectionString: string) {
   const client = postgres(connectionString, {
     max: 1,
@@ -36,11 +34,14 @@ function createDb(connectionString: string) {
   return drizzle(client, { schema, logger: true });
 }
 
-export async function getDb() {
+/**
+ * Returns a Drizzle client. Wrapped in React `cache()` so the postgres client is
+ * scoped to the current request. A module-level singleton must NOT be used on
+ * Cloudflare Workers: an isolate serves many requests, and a connection opened
+ * in one request's context cannot be reused by another ("Cannot perform I/O on
+ * behalf of a different request").
+ */
+export const getDb = cache(async () => {
   const connectionString = await resolveConnectionString();
-  if (!dbPromise || cachedConnectionString !== connectionString) {
-    cachedConnectionString = connectionString;
-    dbPromise = createDb(connectionString);
-  }
-  return dbPromise;
-}
+  return createDb(connectionString);
+});
