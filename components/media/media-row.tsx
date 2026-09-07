@@ -115,7 +115,6 @@ export function MediaRow({ title, children, className }: MediaRowProps) {
           className={cn(
             'flex min-h-0 snap-x snap-proximity gap-4 overflow-x-auto overflow-y-hidden py-0.5 pe-3 sm:pe-4',
             'scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] motion-reduce:scroll-auto [&::-webkit-scrollbar]:hidden',
-            'touch-pan-x',
             'sm:px-0.5',
           )}
         >
