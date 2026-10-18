@@ -31,8 +31,6 @@ jobs:
           TMDB_BASE_URL: ${{ secrets.TMDB_BASE_URL }}
           TMDB_API_TOKEN: ${{ secrets.TMDB_API_TOKEN }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
 
       - name: Deploy Worker
         run: bunx wrangler deploy
@@ -47,8 +45,6 @@ jobs:
           printf '%s' "$CLERK_SECRET_KEY" | bunx wrangler secret put CLERK_SECRET_KEY
           printf '%s' "$CLERK_WEBHOOK_SECRET" | bunx wrangler secret put CLERK_WEBHOOK_SECRET
           printf '%s' "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" | bunx wrangler secret put NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-          printf '%s' "$NEXT_PUBLIC_SUPABASE_ANON_KEY" | bunx wrangler secret put NEXT_PUBLIC_SUPABASE_ANON_KEY
-          printf '%s' "$NEXT_PUBLIC_SUPABASE_URL" | bunx wrangler secret put NEXT_PUBLIC_SUPABASE_URL
           printf '%s' "$AI_SEARCH_BASE_URL" | bunx wrangler secret put AI_SEARCH_BASE_URL
           printf '%s' "$AI_SEARCH_SERVICE_KEY" | bunx wrangler secret put AI_SEARCH_SERVICE_KEY
         env:
@@ -59,7 +55,5 @@ jobs:
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           CLERK_WEBHOOK_SECRET: ${{ secrets.CLERK_WEBHOOK_SECRET }}
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           AI_SEARCH_BASE_URL: ${{ secrets.AI_SEARCH_BASE_URL }}
           AI_SEARCH_SERVICE_KEY: ${{ secrets.AI_SEARCH_SERVICE_KEY }}

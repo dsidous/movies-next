@@ -9,7 +9,7 @@
 [![Clerk](https://img.shields.io/badge/Clerk-auth-6C47FF?style=flat-square&logo=clerk&logoColor=white)](https://clerk.com/)
 [![Drizzle](https://img.shields.io/badge/Drizzle-ORM-C5F74F?style=flat-square&logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-host-3FCF8E?style=flat-square&logo=supabase&logoColor=black)](https://supabase.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-Postgres-2D3748?style=flat-square&logo=prisma&logoColor=white)](https://www.prisma.io/postgres)
 [![TanStack Query](https://img.shields.io/badge/TanStack-Query-FF4154?style=flat-square&logo=tanstack&logoColor=white)](https://tanstack.com/query/latest)
 [![Zod](https://img.shields.io/badge/Zod-4-3B82F6?style=flat-square&logo=zod&logoColor=white)](https://zod.dev/)
 [![ESLint](https://img.shields.io/badge/ESLint-9-4B32C3?style=flat-square&logo=eslint&logoColor=white)](https://eslint.org/)
@@ -18,7 +18,7 @@
 [![Cloudflare](https://img.shields.io/badge/Cloudflare-DNS-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://www.cloudflare.com/)
 [![TMDB](https://img.shields.io/badge/TMDB-API-01D277?style=flat-square&logo=themoviedatabase&logoColor=white)](https://www.themoviedb.org/)
 
-A Next.js app for browsing movies, TV series, and people using [The Movie Database (TMDB)](https://www.themoviedb.org/) API data. Authentication and user data use **Clerk**; **PostgreSQL** is managed with **Supabase** and accessed through **Drizzle**. The UI layer follows **shadcn/ui** patterns (Radix primitives + Tailwind). Production is deployed with **[SST](https://sst.dev/)** as **`sst.aws.Nextjs`** on **AWS**, with **Cloudflare** handling DNS for the custom domain configured in **`sst.config.ts`**.
+A Next.js app for browsing movies, TV series, and people using [The Movie Database (TMDB)](https://www.themoviedb.org/) API data. Authentication and user data use **Clerk**; **PostgreSQL** is managed with **Prisma Postgres** and accessed through **Drizzle**. The UI layer follows **shadcn/ui** patterns (Radix primitives + Tailwind). Production is deployed with **[SST](https://sst.dev/)** as **`sst.aws.Nextjs`** on **AWS**, with **Cloudflare** handling DNS for the custom domain configured in **`sst.config.ts`**.
 
 ## Tech stack
 
@@ -35,7 +35,7 @@ A Next.js app for browsing movies, TV series, and people using [The Movie Databa
 | **Class names**                    | [clsx](https://github.com/lukeed/clsx), [tailwind-merge](https://github.com/dcastil/tailwind-merge), [class-variance-authority](https://cva.style/)                                                                                                                                                                                  |
 | **Validation & API types**         | [Zod](https://zod.dev/) 4                                                                                                                                                                                                                                                                                                            |
 | **Authentication**                 | [Clerk](https://clerk.com/) (`@clerk/nextjs`) — sign-in, sessions, webhooks; users/watchlist tied to Clerk user ids in Postgres                                                                                                                                                                                                      |
-| **Database**                       | [Supabase](https://supabase.com/) **Postgres** (connection string via `DATABASE_URL`); schema and queries with [Drizzle ORM](https://orm.drizzle.team/) (`drizzle-orm`, `postgres` driver); migrations in `db/migrations`, [Drizzle Kit](https://orm.drizzle.team/kit-docs/overview) for generate/migrate/studio                     |
+| **Database**                       | [Prisma Postgres](https://www.prisma.io/postgres) (connection string via `DATABASE_URL`); schema and queries with [Drizzle ORM](https://orm.drizzle.team/) (`drizzle-orm`, `postgres` driver); migrations in `db/migrations`, [Drizzle Kit](https://orm.drizzle.team/kit-docs/overview) for generate/migrate/studio                     |
 | **Deployment**                     | [SST (Ion)](https://sst.dev/) — [`sst.aws.Nextjs`](https://sst.dev/docs/component/aws/nextjs/) on AWS; GitHub Actions runs `npx sst install` then `npx sst deploy --stage prod`; custom domain DNS via [Cloudflare](https://www.cloudflare.com/). Config lives in **`sst.config.ts`**.                                                                                                                      |
 | **Server data & mutations**        | [Next.js Server Actions](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations) (`'use server'` modules under `lib/actions/`) — TMDB and app data stay on the server                                                                                                                         |
 | **Client-side fetching & caching** | [TanStack Query](https://tanstack.com/query/latest) v5 (`@tanstack/react-query`) — `[QueryClientProvider](components/providers/query-provider.tsx)` in the root layout; `[useInfiniteQuery](https://tanstack.com/query/latest/docs/framework/react/guides/infinite-queries)` for paginated lists (popular people, movie/TV discover) |
@@ -60,7 +60,7 @@ Put values in a **`.env`** file at the repo root (ignored by Git). Typical keys:
 - **TMDB** — `TMDB_BASE_URL`, `TMDB_API_TOKEN`
 - **AI search (Next.js)** — `AI_SEARCH_BASE_URL` (e.g. `http://localhost:8000`), optional `AI_SEARCH_SERVICE_KEY` (must match the Python service if set)
 - **Clerk** — `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and `CLERK_WEBHOOK_SECRET` if you use Clerk webhooks
-- **Supabase / Postgres** — `DATABASE_URL` (Supabase **Settings → Database → Connection string**, URI form for Drizzle), plus `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` if your app expects them at runtime
+- **Postgres** — `DATABASE_URL` (**Prisma Console → your database → Connect**, direct connection string with `?sslmode=require`, URI form for Drizzle and Drizzle Kit)
 
 If you only develop locally (`bun dev`) and rely on CI for deployment, you do **not** need AWS credentials, Cloudflare tokens, or `SST_*` variables unless you run SST CLI commands (`sst dev`, deploy, etc.) on your machine.
 
@@ -103,9 +103,8 @@ Use **repository** variables unless you introduce GitHub Environments (staging v
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | Deploy to AWS from the workflow                                        |
 | `CLOUDFLARE_API_TOKEN`                      | Cloudflare DNS for the custom domain                                    |
 | `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET` | Clerk (server); passed through to Next.js via `sst.config.ts` environment block |
-| `DATABASE_URL`                              | Postgres (e.g. Supabase)                                                 |
+| `DATABASE_URL`                              | Postgres (e.g. Prisma Postgres direct connection string)                                                 |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`       | Clerk (publishable key at build/runtime)                                   |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_URL` | Supabase                                                             |
 | `TMDB_API_TOKEN`, `TMDB_BASE_URL`          | TMDB API                                                                |
 | `AI_SEARCH_BASE_URL`, `AI_SEARCH_SERVICE_KEY` | URL of the Modal-hosted AI search service (optional key for auth) |
 | `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET` | Deploy `ai-search/` to Modal ([`.github/workflows/deploy-ai-search.yml`](.github/workflows/deploy-ai-search.yml)) |
